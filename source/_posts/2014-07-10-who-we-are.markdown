@@ -1,0 +1,16 @@
+---
+layout: post
+title: "Who we are"
+date: 2014-07-10 21:02:09 +0800
+comments: true
+author: Zhao Cong
+categories:
+---
+
+We are the code monkeys in Garena.
+
+As an Android developer, we have learnt a lot from the online community, otherwise we cannot reach this far today.
+
+We would like to start blogging about what makes us strong and what we feel proud of.
+
+![alt-text](/images/logo-garena.gif)
