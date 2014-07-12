@@ -9,7 +9,7 @@ categories:
 
 We are the code monkeys in Garena.
 
-As an Android developer, we have learnt a lot from the online community, otherwise we cannot reach this far today.
+As Android developers, we have learnt a lot from the online community, otherwise we cannot reach this far today.
 
 We would like to start blogging about what makes us strong and what we feel proud of.
 
