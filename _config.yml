@@ -4,7 +4,7 @@
 
 url: http://garena.github.io
 title: Engineering @ garena
-subtitle: The Music of Software
+subtitle: Creating Software one app at a time
 author: Garena Labs
 simple_search: https://www.google.com/search
 description: A Tech Blog by Garena Labs
@@ -64,13 +64,13 @@ default_asides: [asides/recent_posts.html, asides/github.html, asides/delicious.
 # ----------------------- #
 
 # Github repositories
-github_user:
-github_repo_count: 0
+github_user: garena
+github_repo_count: 10
 github_show_profile_link: true
 github_skip_forks: true
 
 # Twitter
-twitter_user:
+twitter_user: Garena_SG
 twitter_tweet_button: true
 
 # Google +1
@@ -91,11 +91,11 @@ delicious_user:
 delicious_count: 3
 
 # Disqus Comments
-disqus_short_name:
-disqus_show_comment_count: false
+disqus_short_name: garenalabs
+disqus_show_comment_count: true
 
 # Google Analytics
 google_analytics_tracking_id:
 
 # Facebook Like
-facebook_like: false
+facebook_like: true
