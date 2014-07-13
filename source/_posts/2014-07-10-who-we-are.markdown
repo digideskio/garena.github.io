@@ -4,6 +4,7 @@ title: "Who we are"
 date: 2014-07-10 21:02:09 +0800
 comments: true
 author: Zhao Cong
+author_about: zhao-cong
 categories:
 ---
 
