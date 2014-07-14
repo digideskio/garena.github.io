@@ -5,6 +5,7 @@ date: 2014-07-13 17:15:15 +0800
 comments: true
 categories: [Android,BeeTalk]
 author: Zhao Cong
+author_about: zhao-cong
 published: true
 ---
 
