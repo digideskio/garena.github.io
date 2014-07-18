@@ -3,6 +3,7 @@ layout: post
 title: "Android prevent webview from memory leak"
 date: 2014-07-18 14:40:33 +0800
 comments: true
+published: true
 categories: [Android,Beetalk]
 author: Xiang Yongzhou
 categories: 
