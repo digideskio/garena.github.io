@@ -3,7 +3,6 @@ layout: post
 title: "Powered by Dagger 2"
 date: 2015-05-19 17:15:10 +0800
 comments: true
-categories: 
 categories: [Android]
 author: Zhao Cong
 author_about: zhao-cong

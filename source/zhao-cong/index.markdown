@@ -7,4 +7,6 @@ sharing: true
 footer: true
 ---
 
-Hello world!
+I have been working in Garena since 2012 and it has been an awesome journey to go this far. My focus shifted to Android in early 2013. The size of the team grows from 1 to 12 in the past 2 years and now it is the right time for us to aim higher :-)
+
+
