@@ -168,7 +168,7 @@ public class TestLoginActivity extends LoginActivity {
 
 #### Async Trick
 
-People always wonder how to test something asynchronous from the user perspective, i.e fire a network request and the activity moves to the next step. Espresso supports `AsyncTask` in its core implementation and offers flexibility to other async/task management framework. [Bolts]() is our choice of task management and our code is structured like this 
+People always wonder how to test something asynchronous from the user perspective, i.e fire a network request and the activity moves to the next step. Espresso supports `AsyncTask` in its core implementation and offers flexibility to other async/task management framework. [Bolts](https://github.com/BoltsFramework/Bolts-Android) is our choice of task management and our code is structured like this 
 ```java
 mContinueBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
