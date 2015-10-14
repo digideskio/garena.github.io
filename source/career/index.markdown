@@ -16,4 +16,4 @@ For the Android team, we are looking for people who
 
 If you are interested to join us and code app with high quality in sunny Singapore, feel free to drop [us](hr@garena.com) a note
 
-For our all openings, please refer to [here](http://http://career.garena.sg//).
+For our all openings, please refer to [here](http://career.garena.sg/).
