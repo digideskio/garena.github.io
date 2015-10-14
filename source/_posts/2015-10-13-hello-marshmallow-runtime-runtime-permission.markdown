@@ -10,17 +10,17 @@ categories: [Android]
 published: true
 ---
 
-We never care about new release of Android operating system. Three reasons. Firstly, there were hardly any broken changes and the new operating system promised to be compatible with the legacy. Secondly, it took months for the non-Nexus user to get the OTA and the adaption for new OS happens in a slow pace, i.e. Lollipop only hits around 20% in the global Android distribution. Thirdly, we don't have enough manpower to bother with new OS and engineers is occupied by one feature after another. However, the new Android 6.0 really grab our attention since it broke two barriers: the new operating system introudces breaking changes with the new permission system and the slighly bigger team want to deal with it. 
+We never care about new release of Android operating system. Three reasons. Firstly, there were hardly any broken changes and the new operating system promised to be compatible with the legacy. Secondly, it took months for the non-Nexus user to get the OTA and the adaption for new OS happens in a slow pace, i.e. Lollipop only hits around 20% in the global Android distribution. Thirdly, we don't have enough manpower to bother with new OS and engineers is occupied by one feature after another. However, the new Android 6.0 really grab our attention since it broke two barriers: the new operating system introduces breaking changes with the new permission system and the slightly bigger team want to deal with it. 
 
 ## Timeline 
 
-OTA for Nexus devices kicks off at the first week of October 2015 and many more manufactuers pledged their support by the end of 2015. So roughly we have *three months* to deal with the issues. 
+OTA for Nexus devices kicks off at the first week of October 2015 and many more manufactures pledged their support by the end of 2015. So roughly we have *three months* to deal with the issues. 
 
 ## What's happening?
 
-Quote from [offical dashboard](https://developer.android.com/about/dashboards/index.html). 
+Quoted from [offical dashboard](https://developer.android.com/about/dashboards/index.html). 
 
-![Offical Dashboard](/images/android-dashbord-2015-oct.png)
+![Official Dashboard](/images/android-dashbord-2015-oct.png)
 
 Our initial thoughts are
 
@@ -140,7 +140,7 @@ In conclusion, you shall never trust the `grantResults` and always check the per
 
 ## Alternative
 
-Apparently Google recommends app not to ask for permission if unnecessary. However if the app does not have the `CAMERA` perssimion, it cannot fire intent to get the default app running. We are not sure if this is a bug or not. 
+Apparently Google recommends app not to ask for permission if unnecessary. However if the app does not have the `CAMERA` permission, it cannot fire intent to get the default app running. We are not sure if this is a bug or not. 
 
 ## Threading
 
@@ -195,7 +195,7 @@ In this case, you will find all required permissions granted by default.
 
 ![Permission Granted](/images/permission-api-22.png)
 
-However, we shall have **NO** execuse keeping this configuration as user can turn off the permission if they determine to do so. 
+However, we shall have **NO** excuse keeping this configuration as user can turn off the permission if they determine to do so. 
 
 
 ## The Most Challenging Part 
