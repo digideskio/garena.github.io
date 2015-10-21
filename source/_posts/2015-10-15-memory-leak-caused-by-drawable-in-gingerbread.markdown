@@ -6,11 +6,11 @@ comments: true
 published: true
 ---
 
-In the previous [blog](/blog/2014/09/10/android-memory-leaks/), we have briefly introduced memory leak in Android. Memory leak is one of the most important issues, we need to pay attention to during Android development. However, sometimes, we may get memory leak when we are unaware of it. In this blog, we would like to share a scenario of memory leak, which happens in Gingerbread. 
+In the previous [post](/blog/2014/09/10/android-memory-leaks/), we have briefly introduced memory leak in Android. Memory leak is one of the most important issues, we need to pay attention to during Android development. It may happen when we are unaware of it. In this post, we would like to share a scenario of memory leak, which happens in Gingerbread. 
 
 ##Scenario
 
-Let's first take a look at a simple example:
+Firstly let's take a look at a simple example:
 
 ``` java
 public class SecondActivity extends Activity {
@@ -28,7 +28,7 @@ public class SecondActivity extends Activity {
 
 This piece of code is very simple. In an Activity, we would like to get a Drawable from a LRU cache, and then show the Drawable in a ImageView inside the Activity. Could you figure out anything wrong with this piece of code?
 
-Actually, this piece of code would cause memory leak in Gingerbread devices. When the Activity is destroyed, the LRU cache would likely continue to keep a strong reference of the Drawable. The Drawable would still keep a strong reference of the View. Therefore, the whole Activity, as well as everything inside the Activity would be memory leaked. 
+Actually, this piece of code would cause memory leak in Gingerbread devices. When the Activity is destroyed, the LRU cache would likely continue to keep a strong reference of the Drawable, and the Drawable would still keep a strong reference of the View. Therefore, the whole Activity, as well as everything inside the Activity would be memory leaked.
 
 ##Reason
 The memory leak is caused by a small “bug” in the design of the Drawable object in Gingerbread.
@@ -42,7 +42,7 @@ public final void  setCallback(Callback cb) {
 }
 ```
 
-That means, whenever we want to display the Drawable to a View, the Drawable would keep a strong reference of the View. Therefore, even after the Activity or View is destroyed, the Drawable would still keep a strong reference to the View, which may cause the memory leak.
+That means, whenever we want to display the Drawable to a View, the Drawable would keep a strong reference of the View. Therefore, even after the Activity or View is destroyed, the Drawable would still keep a strong reference to the View, which may cause memory leak.
 
 You may think it is the LRU cache causes the memory leak. However, even if we do not use the LRU cache, this memory leak may still happen easily. The reason is that Android does have some kind of recycling manager with Drawable component. Therefore, when we get the Drawable with the same resource ID at different places, it is very common that Android would return the same instance of Drawable in order to optimize the usage of the memory. 
 
@@ -50,7 +50,7 @@ In other words, even there is no LRU cache, the same Drawable may still be used 
 
 ##Solution
 
-In order to solve this kind of memory leak, what we need to do is to manually set the Callback to be null when ```onDestory()``` is called in the Activity, or when ```onDetachedFromWindow()``` is called for the specific View. The source code we used to unbind the Drawable from the root view of the Activity is shown below:
+In order to solve this kind of memory leak, what we need to do is to manually set the Callback to be ```null``` when ```onDestory()``` is called in the Activity, or when ```onDetachedFromWindow()``` is called for the specific View. The source code we used to unbind the Drawable from the root view of the Activity is shown below:
 
 
 ``` java
