@@ -6,11 +6,11 @@ comments: true
 published: true
 ---
 
-In the previous [post](/blog/2014/09/10/android-memory-leaks/), we have briefly introduced memory leak in Android. Memory leak is one of the most important issues, we need to pay attention to during Android development. It may happen when we are unaware of it. In this post, we would like to share a scenario of memory leak, which happens in Gingerbread. 
+In the previous [post](/blog/2014/09/10/android-memory-leaks/), we have briefly introduced memory leak in Android. Memory leak is one of the most important issues, we need to pay attention to during Android development. It may happen when we are unaware of it. In this post, we would like to share a scenario of memory leak in Gingerbread, which is diffcult to notice and observe. 
 
 ##Scenario
 
-Firstly let's take a look at a simple example:
+Firstly, let's take a look at a simple example:
 
 ``` java
 public class SecondActivity extends Activity {
