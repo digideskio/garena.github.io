@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Beetalk | Engineering @ garena]]></title>
+  <link href="http://garena.github.io/blog/categories/beetalk/atom.xml" rel="self"/>
+  <link href="http://garena.github.io/"/>
+  <updated>2015-10-21T13:37:48+08:00</updated>
+  <id>http://garena.github.io/</id>
+  <author>
+    <name><![CDATA[Garena Labs]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[What Works for Us So Far - Ormlite]]></title>
+    <link href="http://garena.github.io/blog/2014/07/18/what-works-for-us-so-far-ormlite/"/>
+    <updated>2014-07-18T13:33:30+08:00</updated>
+    <id>http://garena.github.io/blog/2014/07/18/what-works-for-us-so-far-ormlite</id>
+    <content type="html"><![CDATA[<h3><a href="http://ormlite.com/sqlite_java_android_orm.shtml">Ormlite</a></h3>
+
+<p>Ormlite is the our choice of database ORM. Although we have decided to stick to it for new Android applications, there are quite a few thing missing in the manual.</p>
+
+<h3>Name the Database</h3>
+
+<p>Normally you name the databas with user ID like this.</p>
+
+<p>```java</p>
+
+<p>String databaseName = String.format(&ldquo;user_%d.db&rdquo;, mUserId);</p>
+
+<p>```</p>
+
+<p>Then you are screwed because you don&rsquo;t speak Persian/Arabian. In some languages, you cannot expect one as <code>1</code> and this <a href="http://en.wikipedia.org/wiki/Eastern_Arabic_numerals">wiki post</a> will show you a new way to write numbers. You can reproduce this issue by switching the locale to Arabic on the phone and you must stay clam if the app cannot find the database. The fix is simple, just specify the locale when formatting the string.</p>
+
+<p>```java</p>
+
+<p>String databaseName = String.format(Locale.ENGLISH,&ldquo;user_%d.db&rdquo;, mUserId);</p>
+
+<p>```</p>
+
+<!-- more -->
+
+
+<h3>Name the Column</h3>
+
+<p>Well, you have the database now and go ahead to create tables. Take the example from the website:</p>
+
+<p>```java</p>
+
+<p>@DatabaseTable(tableName = &ldquo;accounts&rdquo;)
+public class Account {</p>
+
+<pre><code>@DatabaseField(id = true)
+private String name;
+
+@DatabaseField(canBeNull = false)
+private String password;
+...
+Account() {
+    // all persisted classes must define a no-arg constructor with at least package visibility
+}
+...
+</code></pre>
+
+<p>}
+```</p>
+
+<p>If you are going to run proguard, then you may be screwed because the column changes. There are two solutions to this, either naming the columb explicitly or make all database object class excluded from proguard, as shown below.</p>
+
+<p>```java</p>
+
+<p>APPROACH ONE &ndash; Name the column explicitly</p>
+
+<p>@DatabaseTable(tableName = &ldquo;accounts&rdquo;)
+public class Account {</p>
+
+<pre><code>@DatabaseField(id = true,columnName = "name")
+private String name;
+
+@DatabaseField(canBeNull = false, columnName = "password")
+private String password;
+...
+Account() {
+    // all persisted classes must define a no-arg constructor with at least package visibility
+}
+...
+</code></pre>
+
+<p>}</p>
+
+<p>APPROACH TWO &ndash; Modify the proguard file</p>
+
+<p>-keep class com.XXXXXX.bean.<em>*{</em>;}</p>
+
+<p>```</p>
+
+<h3>Are those results cached?</h3>
+
+<p>Now you have the table and it is time to query the data out from the database. ORM generally makes your life easier but it does not mean that the app can get the data with ease. Ormlite claims that the result is cached but you have to do the homework yourself by following <a href="http://ormlite.com/javadoc/ormlite-core/doc-files/ormlite_5.html#Object-Caches">this guide</a>.</p>
+
+<p>However it only works for 4.48+, in 4.46, you may write code like this
+<code>java
+ mUserDao = DaoManager.createDao(getConnectionSource(), UserInfo.class);
+ mUserDao.setObjectCache(true);
+</code></p>
+
+<p>And we guarantee that it does NOT work at all.</p>
+
+<h3>Update the table</h3>
+
+<p>Database scheme always changes because PM always changes their mind.</p>
+
+<p>OrmLite provides callback for you to decide how to upgrade.</p>
+
+<p>```java
+@Override</p>
+
+<pre><code>public void onUpgrade(SQLiteDatabase sqLiteDatabase, ConnectionSource connectionSource, final int oldVersion, final int newVersion) {
+    if (newVersion &gt; oldVersion) {
+       //run upgrade
+    }
+}
+</code></pre>
+
+<p>```</p>
+
+<p>We follow this guide <a href="http://ormlite.com/javadoc/ormlite-core/doc-files/ormlite_4.html#Upgrading-Schema">here</a> and we were happy until PM changes his mind on how to contact the customers.</p>
+
+<p>```java
+ if (oldVersion &lt; 8 &amp;&amp; newVersion >= 8) {</p>
+
+<pre><code>TableUtils.createTableIfNotExists(connectionSource, Customer.class);
+</code></pre>
+
+<p> }</p>
+
+<p> &hellip;//A lot of thing happens here</p>
+
+<p> if (oldVersion &lt; 12 &amp;&amp; newVersion >= 12) {</p>
+
+<pre><code>  dao.executeRaw("ALTER TABLE `customer` ADD COLUMN contact_number VARCHAR DEFAULT ``;");
+</code></pre>
+
+<p> }
+```</p>
+
+<p>We were screwed because the app could not complete the upgrade after upgrade. The issue here is that you should not use <code>createTableIfNotExists</code> to update the database. Let&rsquo;s assume that the user wants to upgrade his database from version 7 to version 8. He gonna hit the 1st statement to create the database and before the 2nd statement runs, he already has the column named <em>customer</em>. The definition of <em>Customer</em> changes over time! You should always write raw query to update the database becuase the query won&rsquo;t change.</p>
+
+<p>```java
+ if (oldVersion &lt; 8 &amp;&amp; newVersion >= 8) {</p>
+
+<pre><code>dao.executeRaw("CREATE TABLE `customer` ......");
+</code></pre>
+
+<p> }</p>
+
+<p> &hellip;//A lot of thing happens here</p>
+
+<p> if (oldVersion &lt; 12 &amp;&amp; newVersion >= 12) {</p>
+
+<pre><code>dao.executeRaw("ALTER TABLE `customer` ADD COLUMN contact_number VARCHAR DEFAULT ``;");
+</code></pre>
+
+<p> }
+```</p>
+
+<p>Besides OrmLite, there are plenty of options out there and we have not got a chance to get hands on them. We are interested to explore <a href="http://sqlcipher.net/">SQLCipher</a> in the near future.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[What Works for Us So Far - Volley]]></title>
+    <link href="http://garena.github.io/blog/2014/07/13/what-works-for-us-so-far-volley/"/>
+    <updated>2014-07-13T17:15:15+08:00</updated>
+    <id>http://garena.github.io/blog/2014/07/13/what-works-for-us-so-far-volley</id>
+    <content type="html"><![CDATA[<p>There are quite a few open source projects which aims to accelerate Android application development. For example,
+<a href="http://java.dzone.com/articles/how-become-lazy-productive">this series</a> is a great summary on how to be &ldquo;lazy productive&rdquo;. All of those frameworks or tools look great at the first sight but they may screw up you when you drive deeper and deeper.</p>
+
+<p>To help you guys to make better decision, we want to share our experience and today let&rsquo;s starts with <a href="https://android.googlesource.com/platform/frameworks/volley/">Volley</a> from Google.</p>
+
+<h3><a href="https://android.googlesource.com/platform/frameworks/volley/">Volley</a></h3>
+
+<p>Volley debuts in Google IO last year and we fall in love with it quickly. It provides a complete set of toolkit to download anything via HTTP protocol. In addition to the general file download framework, it shows us a great example on how to download and process the images. With Volley, you don&rsquo;t need to worry about</p>
+
+<ul>
+<li>Establish the connection</li>
+<li>How to handle HTTP files</li>
+<li>How to handle the images</li>
+<li>Can extend to download anything</li>
+</ul>
+
+
+<!-- more -->
+
+
+<p>By default, Volley can help you download JSON and images, but it can help you to download anything.</p>
+
+<p>Build a simple byte data wrapper</p>
+
+<p>``` java
+public class ByteWrapper {</p>
+
+<pre><code>private byte[] data;
+
+public ByteWrapper(byte[] data) {
+    this.data = data;
+}
+
+public byte[] getData(){
+    return this.data;
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Then implement your own download request object</p>
+
+<p>``` java
+public class BinaryHttpRequest extends Request<ByteWrapper> {</p>
+
+<pre><code>private Response.Listener&lt;ByteWrapper&gt; mProcessor;
+
+public BinaryHttpRequest(int method, String url,Response.Listener&lt;ByteWrapper&gt; processor,Response.ErrorListener listener) {
+    super(method, url, listener);
+    mProcessor = processor;
+    //retry once
+    setRetryPolicy(new DefaultRetryPolicy(DefaultRetryPolicy.DEFAULT_TIMEOUT_MS, 2, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+}
+
+@Override
+protected Response&lt;ByteWrapper&gt; parseNetworkResponse(NetworkResponse response) {
+    byte[] data = response.data;
+    return Response.success(new ByteWrapper(data),this.getCacheEntry());
+}
+
+@Override
+protected void deliverResponse(ByteWrapper response) {
+    mProcessor.onResponse(response);
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>If you want to parse the bytes into JSON, you can easily write a callback similar to this</p>
+
+<p>```
+public abstract class BBJsonDownloadEvent implements DownloadEvent {</p>
+
+<pre><code>//OVERRIDE this class to process the JSON object
+protected abstract void onJSonObject(JSONObject obj) throws JSONException;
+
+@Override
+public void onError(int errorCode) {
+
+}
+
+@Override
+public void onFinish(byte[] data, int nLen) {
+    try {
+        String JSONString = new String(data, "UTF-8");
+        JSONObject response= new JSONObject(JSONString);
+        onJSonObject(response);
+    } catch (UnsupportedEncodingException |JSONException e) {
+        BBAppLogger.e(e);
+    }
+}
+
+@Override
+public void onDownloading(int nAllLen, int nPos) {
+
+}
+
+@Override
+public void onDestroy() {
+
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Then you just need to read the bytes and get what you want, happy eh :&ndash;)</p>
+
+<p>Soon after we drive Volley to do everything for us, we found ourselves in deep trouble. Apparently the memory usage is high and 10+ threads starts with the application. We dig the source and eventually realize we misuse the download queue. Normally we start the Volley download queue by
+<code>
+  Volley.newRequestQueue(); //now you get 6 idle threads
+</code>
+It is simple and elegant. Read the source code and we are shocked at the fact that it always starts 6 threads right away. We have a few request queue in different modules so Volley starts tons of useless threads when the applicaiton starts. The fix is simple &ndash; we make sure that all different modules share the same request queue (in another Singleton nightmare >&lt;).</p>
+
+<p>Then after upgrade to latest Volley, it screws up again because it always scales the full size images to fit the size for display :&ndash;(</p>
+
+<p>Well, sorry, Volley,we don&rsquo;t want you to be our default image loader anymore because user shall not download the images twice just because it gonna display in different sizes. We have built our own image loading solution which we pretty much copy the idea from Volley but backended by file downloading via in house protocol.  Essentially we follows those general principals to design our own image loading solution.</p>
+
+<ul>
+<li>Share the LRU cache</li>
+<li>engage synchorous loading if the bitmap is in cache</li>
+<li>engage asynchorous loading if we don&rsquo;t have the images ready (not in cache or need to download from the Internet)</li>
+</ul>
+
+
+<p>As conclusion, Volley inspires us to write a decent image processing module and it shows us a excellent lightweight design for network requests.</p>
+]]></content>
+  </entry>
+  
+</feed>

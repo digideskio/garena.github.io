@@ -1,0 +1,788 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+
+<head>
+
+
+<meta charset="utf-8">
+<meta http-equiv="cleartype" content="on">
+
+<title>Memory Leaks in Android - Engineering @ garena</title>
+<meta name="author" content="Garena Labs">
+
+
+
+
+<meta name="description" content="A Tech Blog by Garena Labs">
+
+<meta name="keywords" content=" ">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Twitter Cards -->
+
+  
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:image" content"">
+  
+  <meta name="twitter:title" content="Memory Leaks in Android">
+  <meta name="twitter:description" content="A Tech Blog by Garena Labs">
+  <meta name="twitter:creator" content="@Garena_SG">
+
+
+<!-- Open Graph -->
+<meta property="og:local" content="en_US">
+<meta property="og:type" content="article">
+<meta property="og:url" content="http://garena.github.io/blog/2014/09/10/android-memory-leaks">
+<meta property="og:title" content="Memory Leaks in Android">
+<meta property="og:description" content="A Tech Blog by Garena Labs">
+
+  <meta property="og:image" content="">
+
+<meta property="og:site_name" content="Engineering @ garena">
+
+<link rel="canonical" href="http://garena.github.io/blog/2014/09/10/android-memory-leaks">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+<link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+<link href="/atom.xml" rel="alternate" title="Engineering @ garena" type="application/atom+xml">
+
+<script src="/javascripts/modernizr.min.js"></script>
+
+
+
+<!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+</head>
+
+<body id="post" >
+
+<!--[if lt IE 9]><div class="upgrade"><strong><a href="http://whatbrowser.org/">Your browser is quite old!</strong> Why not upgrade to a different browser to better enjoy this site?</a></div><![endif]-->
+<nav id="dl-menu" class="dl-menuwrapper" role="navigation">
+	<button class="dl-trigger">Open Menu</button>
+	<ul class="dl-menu">
+		<li><a href="/">Home</a></li>
+		<li><a href="/career">Career</a></li>
+		<li>
+			<a href="#">About</a>
+			<ul class="dl-submenu">
+				<li>
+					<img src="" alt="Garena Labs photo" class="author-photo">
+					<h4>Garena Labs</h4>
+					<p></p>
+				</li>
+				<li><a href="//www.zimmerman.io">Learn More</a></li>
+				
+				<li>
+					<a href="http://twitter.com/Garena_SG"><i class="fa fa-twitter"></i> Twitter</a>
+				</li>
+				
+				<li>
+					<a href="http://github.com/garena"><i class="fa fa-github"></i> GitHub</a>
+				</li>
+			</ul><!-- /.dl-submenu -->
+		</li>
+		<li>
+			<a href="#">Posts</a>
+			<ul class="dl-submenu">
+				<li><a href="/posts/">All Posts</a></li>
+				<li><a href="/categories/">All Categories</a></li>
+			</ul>
+		</li>
+		
+	</ul><!-- /.dl-menu -->
+</nav><!-- /.dl-menuwrapper -->
+
+
+
+
+<div id="main" role="main">
+  <article class="hentry">
+    <header class="header-title">
+      <div class="header-title-wrap">
+        
+          <h1 class="entry-title"><a href="/blog/2014/09/10/android-memory-leaks/" rel="bookmark" title="Memory Leaks in Android">Memory Leaks in Android</a></h1>
+        
+        <h2>September 10, 2014</h2>
+      </div><!-- /.header-title-wrap -->
+    </header>
+    <div class="entry-content">
+      <h2>What is a Memory Leak?</h2>
+
+<p>Memory leak is existence of objects in the memory, that are not needed anymore according to the application logic, but still retain memory and cannot be collected because they are referenced from other live objects, due to a bug in application itself. When the program runs for an extended time and consumes additional memory over time, it can diminish the performance of the system by reducing the amount of available memory. Eventually, in the worst case, too much of the available memory may become allocated and the system may run &ldquo;<a href="https://developer.android.com/reference/java/lang/OutOfMemoryError.html">out of memory (OOM)</a>&rdquo;.</p>
+
+<h2>Understanding Memory Leaks</h2>
+
+<p>To understand memory leaks in Android and how they may happen, let&rsquo;s first start with a simple example:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">HomeActivity</span> <span class="kd">extends</span> <span class="n">BBBaseActivity</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">HomeView</span> <span class="n">view</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HomeView</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">setContentView</span><span class="o">(</span><span class="n">view</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">new</span> <span class="nf">SampleTask</span><span class="o">().</span><span class="na">execute</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="kd">class</span> <span class="nc">SampleTask</span> <span class="kd">extends</span> <span class="n">AsyncTask</span><span class="o">&lt;</span><span class="n">Void</span><span class="o">,</span> <span class="n">Void</span><span class="o">,</span> <span class="n">Void</span><span class="o">&gt;</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">protected</span> <span class="n">Void</span> <span class="nf">doInBackground</span><span class="o">(</span><span class="n">Void</span><span class="o">...</span> <span class="n">params</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="c1">// do nothing</span>
+</span><span class='line'>            <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This code simply starts an <code>AsyncTask</code> when the activity is created. You could have similar code which may start the task when a button is clicked. What if I told you this code can cause potential memory leak! It is not obvious now (because we haven&rsquo;t really done anything in the background).</p>
+
+<p>What if we add some code to the <code>doInBackground()</code> method:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">HomeActivity</span> <span class="kd">extends</span> <span class="n">BBBaseActivity</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">HomeView</span> <span class="n">view</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HomeView</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">setContentView</span><span class="o">(</span><span class="n">view</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">new</span> <span class="nf">SampleTask</span><span class="o">().</span><span class="na">execute</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="kd">class</span> <span class="nc">SampleTask</span> <span class="kd">extends</span> <span class="n">AsyncTask</span><span class="o">&lt;</span><span class="n">Void</span><span class="o">,</span> <span class="n">Void</span><span class="o">,</span> <span class="n">Void</span><span class="o">&gt;</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kd">private</span> <span class="kt">long</span> <span class="n">mStartTime</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onPreExecute</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">mStartTime</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">();</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">protected</span> <span class="n">Void</span> <span class="nf">doInBackground</span><span class="o">(</span><span class="n">Void</span><span class="o">...</span> <span class="n">params</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">doBackgroundWork</span><span class="o">();</span>
+</span><span class='line'>            <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kd">private</span> <span class="kt">void</span> <span class="nf">doBackgroundWork</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="kt">long</span> <span class="n">timeNow</span><span class="o">;</span>
+</span><span class='line'>            <span class="k">do</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">timeNow</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">();</span>
+</span><span class='line'>                <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">1000</span><span class="o">);</span>
+</span><span class='line'>                <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">}</span> <span class="k">while</span> <span class="o">(</span><span class="n">timeNow</span> <span class="o">-</span> <span class="n">mStartTime</span> <span class="o">&lt;</span> <span class="o">(</span><span class="mi">1</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">1000</span><span class="o">));</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The above code performs some background work. For demonstration, it simply runs in a while loop for <code>1 minute</code>.  This is a fair sample because some tasks may be used for image downloading, file reading etc, which could take some time. Let&rsquo;s run this code and analyze the memory for leaks using <a href="http://android-developers.blogspot.sg/2011/03/memory-analysis-for-android.html">Memory Analyzer Toolkit (MAT)</a>.</p>
+
+<p><img src="/images/leak.png" alt="Memory Analysis using MAT" /></p>
+
+<p>As we can see in the picture above, there are multiple instances of the <code>HomeActivity</code> in the memory which are retained and not garbage collected. After running the above code, try rotating the screen multiple times, or close and launch the activity again a few times. Once the activity is destroyed and recreated, the old instance is still in the memory and is not cleared (even though the activity has been destroyed and is not needed by the application or code logic anymore). Recall, this is what we call <strong>memory leak</strong>.</p>
+
+<h3>Why are the old instances of home activity not cleared?</h3>
+
+<p>At the fundamental level, old instances are not cleared even after the activity is destroyed because <em>&ldquo;someone&rdquo;</em> is keeping a reference to it. This <em>&ldquo;someone&rdquo;</em> is our <code>AsyncTask</code>.  Because we define our <code>AsyncTask</code> as a non-static inner class, it keeps an explicit reference to the parent class (<code>HomeActivity</code>). The <code>AsyncTask</code> will be in the memory (and not be garbage collected) until it has finished execution. So even though the activity has been destroyed, the <code>AsyncTask</code> keeps a reference to it, which prevents the activity instance from getting cleared.</p>
+
+<h3>When <code>AsyncTask</code> completes, the references will be cleared, so why is it a problem?</h3>
+
+<p>This is a problem because it can cause your app to run <em>&ldquo;out of memory&rdquo;</em> and crash. Android system allocates a certain maximum amount of memory to each app. If the app&rsquo;s memory usage exceeds the maximum allocated <em>heap size</em>, <a href="https://developer.android.com/training/articles/memory.html">the application will thow OOM and crash</a>. Having unwanted objects in the memory that are not timely cleared can cause the application to run out of memory. Imagine, if your activity keeps references to bitmaps, large buffers or other objects, there will be multiple copies of them in the memory. This will increase the RAM usage substantially. Before there is a chance for all references to get cleared, the app may run out of memory and crash.</p>
+
+<h3>How can we resolve this issue?</h3>
+
+<p>To answer this, lets see what is the fundamental problem.:</p>
+
+<blockquote><p>The <code>AsycTask</code> is keeping reference to the <code>HomeActivity</code> which prevents it from being cleared.</p></blockquote>
+
+<p>We can ask ourselves:</p>
+
+<ol>
+<li> Does the <code>AsyncTask</code> need to keep a reference to the <code>HomeActivity</code>?</li>
+<li>If it does, how can we make sure that this reference is automatically cleared when we are sure we don&rsquo;t need it anymore?</li>
+</ol>
+
+
+<p>In the above case, the <code>AsyncTask</code> does not need to keep a reference to the activity as it is not accessing any parent members. We could resolve the issue by simply declaring the <code>AsyncTask</code> as a <strong><code>static nested</code></strong> class or in a different class file altogether. This ensures that they not keep a reference to the parent class. (In case you are wondering, <a href="http://www.programmerinterview.com/index.php/java-questions/inner-vs-nested-classes/">here is the difference between inner class and nested class</a>?)</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">HomeActivity</span> <span class="kd">extends</span> <span class="n">BBBaseActivity</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">HomeView</span> <span class="n">view</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HomeView</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">setContentView</span><span class="o">(</span><span class="n">view</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">new</span> <span class="nf">SampleTask</span><span class="o">().</span><span class="na">execute</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">SampleTask</span> <span class="kd">extends</span> <span class="n">AsyncTask</span><span class="o">&lt;</span><span class="n">Void</span><span class="o">,</span> <span class="n">Void</span><span class="o">,</span> <span class="n">Void</span><span class="o">&gt;</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kd">private</span> <span class="kt">long</span> <span class="n">mStartTime</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onPreExecute</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">mStartTime</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">();</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">protected</span> <span class="n">Void</span> <span class="nf">doInBackground</span><span class="o">(</span><span class="n">Void</span><span class="o">...</span> <span class="n">params</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">doBackgroundWork</span><span class="o">();</span>
+</span><span class='line'>            <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kd">private</span> <span class="kt">void</span> <span class="nf">doBackgroundWork</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="kt">long</span> <span class="n">timeNow</span><span class="o">;</span>
+</span><span class='line'>            <span class="k">do</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">timeNow</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">();</span>
+</span><span class='line'>                <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">1000</span><span class="o">);</span>
+</span><span class='line'>                <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">}</span> <span class="k">while</span> <span class="o">(</span><span class="n">timeNow</span> <span class="o">-</span> <span class="n">mStartTime</span> <span class="o">&lt;</span> <span class="o">(</span><span class="mi">5</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">1000</span><span class="o">));</span>
+</span><span class='line'>            <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="s">&quot;TASK&quot;</span><span class="o">,</span> <span class="k">this</span><span class="o">.</span><span class="na">toString</span><span class="o">());</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We run this code, perform the same operations as before, rotate screen few times, close re-open activity etc. This time we observer that there are multiple instances of the <code>AsyncTask</code> in the memory but not multiple instances of the <code>HomeActivity</code>.</p>
+
+<p><img src="/images/leak-fix.png" alt="Memory Analysis using MAT" /></p>
+
+<p>This method does not work always. In some cases, we need to perform certain UI operation after the <code>AsycTask</code> completes, in which case we are required to keep a reference to the <code>Activity</code> or <code>View</code>. Now we simply need to make sure that this reference is <code>weak</code> in nature so that it is automatically cleared by the system once the <code>Activity</code> or <code>View</code> are destroyed. For this we can make use of Java <a href="https://weblogs.java.net/blog/2006/05/04/understanding-weak-references"><code>WeakReference&lt;T&gt;</code></a> class as follows:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">HomeActivity</span> <span class="kd">extends</span> <span class="n">BBBaseActivity</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">HomeView</span> <span class="n">view</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HomeView</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">setContentView</span><span class="o">(</span><span class="n">view</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">new</span> <span class="nf">SampleTask</span><span class="o">(</span><span class="k">this</span><span class="o">).</span><span class="na">execute</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">SampleTask</span> <span class="kd">extends</span> <span class="n">AsyncTask</span><span class="o">&lt;</span><span class="n">Void</span><span class="o">,</span> <span class="n">Void</span><span class="o">,</span> <span class="n">Void</span><span class="o">&gt;</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kd">private</span> <span class="kt">long</span> <span class="n">mStartTime</span><span class="o">;</span>
+</span><span class='line'>        <span class="kd">private</span> <span class="n">WeakReference</span><span class="o">&lt;</span><span class="n">HomeActivity</span><span class="o">&gt;</span> <span class="n">mRef</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kd">public</span> <span class="nf">SampleTask</span><span class="o">(</span><span class="n">HomeActivity</span> <span class="n">activity</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">mRef</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WeakReference</span><span class="o">&lt;</span><span class="n">HomeActivity</span><span class="o">&gt;(</span><span class="n">activity</span><span class="o">);</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onPreExecute</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">mStartTime</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">();</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">protected</span> <span class="n">Void</span> <span class="nf">doInBackground</span><span class="o">(</span><span class="n">Void</span><span class="o">...</span> <span class="n">params</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">doBackgroundWork</span><span class="o">();</span>
+</span><span class='line'>            <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kd">private</span> <span class="kt">void</span> <span class="nf">doBackgroundWork</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="kt">long</span> <span class="n">timeNow</span><span class="o">;</span>
+</span><span class='line'>            <span class="k">do</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">timeNow</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">();</span>
+</span><span class='line'>                <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">1000</span><span class="o">);</span>
+</span><span class='line'>                <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">}</span> <span class="k">while</span> <span class="o">(</span><span class="n">timeNow</span> <span class="o">-</span> <span class="n">mStartTime</span> <span class="o">&lt;</span> <span class="o">(</span><span class="mi">5</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">1000</span><span class="o">));</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onPostExecute</span><span class="o">(</span><span class="n">Void</span> <span class="n">aVoid</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">HomeActivity</span> <span class="n">activity</span> <span class="o">=</span> <span class="n">mRef</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="n">activity</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="c1">// the activity reference was cleared, </span>
+</span><span class='line'>                <span class="c1">// lets forget about it</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>            <span class="k">else</span> <span class="o">{</span>
+</span><span class='line'>                <span class="c1">// lets update the activity with the results</span>
+</span><span class='line'>                <span class="c1">// of the task</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And hence we are able to write code which is memory efficient and less likely to make the system run out of memory.</p>
+
+<h1>Other Leak Scenarios</h1>
+
+<p>Now that we understand what memory leak is, let us explore some other ways we can end up in similar leak situations:</p>
+
+<h3>1) Anonymous Inner Classes</h3>
+
+<p>Java provides syntax for creating <code>inner</code> classes on the fly which do not have a name.  Lets take a look at an example:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="cm">/*Pay attention to the opening curly braces</span>
+</span><span class='line'><span class="cm">  and the fact that there&#39;s a semicolon</span>
+</span><span class='line'><span class="cm">  at the very end, once the anonymous class is created:</span>
+</span><span class='line'><span class="cm">*/</span>
+</span><span class='line'><span class="n">DownloadCallback</span> <span class="n">mCallback</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DownloadCallback</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>  <span class="c1">//code here...</span>
+</span><span class='line'><span class="o">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>These <a href="http://www.programmerinterview.com/index.php/java-questions/java-anonymous-class-example/"><code>anonymous inner</code></a> classes have the same problem as we discussed above. Each keeps a reference to the instance of the <code>parent</code> class which initialized it. This means that if you pass around the <code>mCallback</code> object (in the above case), you may end up with a memory leak. Let&rsquo;s see that with an example:</p>
+
+<p>We have a <code>FileManager</code> which downloads files. It is implemented as follows:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">FileManager</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="kd">static</span> <span class="n">FileManager</span> <span class="n">mInstance</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">synchronized</span> <span class="n">FileManager</span> <span class="nf">getInstance</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">mInstance</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">mInstance</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FileManager</span><span class="o">();</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">mInstance</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="nf">FileManager</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">mCallbackQueue</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayDeque</span><span class="o">&lt;</span><span class="n">DownloadCallback</span><span class="o">&gt;();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">ArrayDeque</span><span class="o">&lt;</span><span class="n">DownloadCallback</span><span class="o">&gt;</span> <span class="n">mCallbackQueue</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">download</span><span class="o">(</span><span class="n">String</span> <span class="n">fileId</span><span class="o">,</span> <span class="n">DownloadCallback</span> <span class="n">callback</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">mCallbackQueue</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">callback</span><span class="o">);</span>
+</span><span class='line'>        <span class="c1">// ..</span>
+</span><span class='line'>        <span class="c1">// do the download</span>
+</span><span class='line'>        <span class="c1">// ..</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If we perform file download from our <code>Activity</code> or <code>View</code> as follows:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">HomeActivity</span> <span class="kd">extends</span> <span class="n">BBBaseActivity</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">HomeView</span> <span class="n">view</span> <span class="o">=</span> <span class="k">new</span> <span class="n">HomeView</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">setContentView</span><span class="o">(</span><span class="n">view</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">FileManager</span><span class="o">.</span><span class="na">getInstance</span><span class="o">().</span><span class="na">download</span><span class="o">(</span><span class="s">&quot;file1&quot;</span><span class="o">,</span> <span class="k">new</span> <span class="n">DownloadCallback</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="nd">@Override</span>
+</span><span class='line'>            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onDownloadComplete</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>                <span class="c1">// download has been completed</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">});</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We have a <strong>&ldquo;memory leak&rdquo;</strong>. Since the <code>FileManager</code> is a <code>singleton</code> it will be in the memory for the lifetime of the application. The download callback is passed to this <code>singleton</code> and stored within <code>mCallbackQueue</code>. This means that there is a reference to the <code>mCallback</code> object from a <code>static</code> object in the memory.</p>
+
+<blockquote><p>This means that for every callback object in the <code>mCallbackQueue</code>, its associated <code>parent</code> class will not get cleared from the memory.</p></blockquote>
+
+<p>If we remove the callback from the <code>mCallbackQueue</code> after the download completes, there are still problems as the download may take a while to finish. In the mean-time the user may have scrolled away or navigated to a new screen. Other downloads may have been put into the queue. Before all downloads complete, the system may go out of memory and crash.</p>
+
+<blockquote><p>Lesson: Avoid passing <code>anonymous inner</code> class objects to static / singleton classes which keep a strong reference to it.</p></blockquote>
+
+<p>To resolve this issue:</p>
+
+<ol>
+<li>We can follow the same logic we used in the case of the <code>AsyncTask</code></li>
+<li>Alternatively, we could make our singleton hold <code>WeakReference</code> to the callbacks instead:</li>
+</ol>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">FileManager</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="kd">static</span> <span class="n">FileManager</span> <span class="n">mInstance</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">synchronized</span> <span class="n">FileManager</span> <span class="nf">getInstance</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">mInstance</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">mInstance</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FileManager</span><span class="o">();</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">mInstance</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="nf">FileManager</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">mCallbackQueue</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayDeque</span><span class="o">&lt;</span><span class="n">WeakReference</span><span class="o">&lt;</span><span class="n">DownloadCallback</span><span class="o">&gt;&gt;();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">ArrayDeque</span><span class="o">&lt;</span><span class="n">WeakReference</span><span class="o">&lt;</span><span class="n">DownloadCallback</span><span class="o">&gt;&gt;</span> <span class="n">mCallbackQueue</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">download</span><span class="o">(</span><span class="n">String</span> <span class="n">fileId</span><span class="o">,</span> <span class="n">DownloadCallback</span> <span class="n">callback</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">mCallbackQueue</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">WeakReference</span><span class="o">&lt;</span><span class="n">DownloadCallback</span><span class="o">&gt;(</span><span class="n">callback</span><span class="o">));</span>
+</span><span class='line'>        <span class="c1">// ..</span>
+</span><span class='line'>        <span class="c1">// do the download</span>
+</span><span class='line'>        <span class="c1">// ..</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In Java<code>inner</code> classes are a handy construct. The key is to understand how they work and ensure that they are not used (or rather &ldquo;overused&rdquo;) in situations that can critically impact the memory.</p>
+
+<p>For more references:</p>
+
+<ul>
+<li><a href="http://www.curious-creature.org/2008/12/18/avoid-memory-leaks-on-android/">http://www.curious-creature.org/2008/12/18/avoid-memory-leaks-on-android/</a></li>
+<li><a href="http://evendanan.net/2013/02/Android-Memory-Leaks-OR-Different-Ways-to-Leak/">http://evendanan.net/2013/02/Android-Memory-Leaks-OR-Different-Ways-to-Leak/</a></li>
+<li><a href="https://developer.android.com/training/articles/memory.html">https://developer.android.com/training/articles/memory.html</a></li>
+</ul>
+
+
+      <footer class="entry-meta">
+        <span class="entry-tags"></span>
+        <span><a href="/blog/2014/09/10/android-memory-leaks/" rel="bookmark" title="Memory Leaks in Android">Memory Leaks in Android</a> was published on <span class="entry-date date published updated"><time datetime="2014-09-10T16:35:45+08:00">September 10, 2014</time></span></span>
+        
+        <span class="author vcard"><span class="fn"><a href="/" title="About "></a></span></span>
+        
+      </footer>
+    </div><!-- /.entry-content -->
+    
+      <div class="read-more">
+        
+          <div class="read-more-header">
+            <a href="/blog/2015/10/15/memory-leak-caused-by-drawable-in-gingerbread/" class="btn">Read More</a>
+          </div><!-- /.read-more-header -->
+          <div class="read-more-content">
+            <h3><a href="/blog/2015/10/15/memory-leak-caused-by-drawable-in-gingerbread/" title="Memory Leak caused by Drawable in Gingerbread">Memory Leak caused by Drawable in Gingerbread</a></h3>
+            <p>In the previous [post](/blog/2014/09/10/android-memory-leaks/), we have briefly introduced memory leak in Android. Memory leak is one of &hellip;&hellip; <a href="/blog/2015/10/15/memory-leak-caused-by-drawable-in-gingerbread/"> Continue reading</a></p>
+          </div><!-- /.read-more-content -->
+        
+        <div class="read-more-list">
+          
+            <div class="list-item">
+              <h4><a href="/blog/2015/10/13/hello-marshmallow-runtime-runtime-permission/" title="Hello Marshmallow - Runtime Permission">Hello Marshmallow - Runtime Permission</a></h4>
+              <span>Published on October 13, 2015</span>
+            </div><!-- /.list-item -->
+          
+            <div class="list-item">
+              <h4><a href="/blog/2015/05/24/a-shot-of-espresso/" title="A Shot of Espresso">A Shot of Espresso</a></h4>
+              <span>Published on May 24, 2015</span>
+            </div><!-- /.list-item -->
+          
+        </div><!-- /.read-more-list -->
+      </div><!-- /.read-more -->
+    
+    <section id="disqus_thread"></section><!-- /#disqus_thread -->
+  </article>
+</div><!-- /#main -->
+
+<div class="footer-wrapper">
+  <footer role="contentinfo">
+    <span>&copy; 2015 Garena Labs. Powered by <a href="http://octopress.org">Octopress</a> using the <a href="https://github.com/Z1MM32M4N/hpstr-theme/">HPSTR Theme for Octopress</a>.</span>
+
+  </footer>
+</div><!-- /.footer-wrapper -->
+
+
+	        
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script>window.jQuery || document.write('<script src="/javascripts/vendor/jquery-1.9.1.min.js"><\/script>')</script>
+<!--
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+-->
+<script src="/javascripts/scripts.min.js"></script>
+
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-53779472-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'garenalabs';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://garena.github.io/blog/2014/09/10/android-memory-leaks/';
+        var disqus_url = 'http://garena.github.io/blog/2014/09/10/android-memory-leaks/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+	        
+
+</body>
+</html>

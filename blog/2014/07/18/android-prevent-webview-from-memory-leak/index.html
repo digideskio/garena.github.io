@@ -1,0 +1,375 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+
+<head>
+
+
+<meta charset="utf-8">
+<meta http-equiv="cleartype" content="on">
+
+<title>Android Prevent Webview From Memory Leak - Engineering @ garena</title>
+<meta name="author" content="Garena Labs">
+
+
+
+
+<meta name="description" content="A Tech Blog by Garena Labs">
+
+<meta name="keywords" content=" ">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Twitter Cards -->
+
+  
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:image" content"">
+  
+  <meta name="twitter:title" content="Android Prevent webview from memory leak">
+  <meta name="twitter:description" content="A Tech Blog by Garena Labs">
+  <meta name="twitter:creator" content="@Garena_SG">
+
+
+<!-- Open Graph -->
+<meta property="og:local" content="en_US">
+<meta property="og:type" content="article">
+<meta property="og:url" content="http://garena.github.io/blog/2014/07/18/android-prevent-webview-from-memory-leak">
+<meta property="og:title" content="Android Prevent webview from memory leak">
+<meta property="og:description" content="A Tech Blog by Garena Labs">
+
+  <meta property="og:image" content="">
+
+<meta property="og:site_name" content="Engineering @ garena">
+
+<link rel="canonical" href="http://garena.github.io/blog/2014/07/18/android-prevent-webview-from-memory-leak">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+<link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+<link href="/atom.xml" rel="alternate" title="Engineering @ garena" type="application/atom+xml">
+
+<script src="/javascripts/modernizr.min.js"></script>
+
+
+
+<!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+</head>
+
+<body id="post" >
+
+<!--[if lt IE 9]><div class="upgrade"><strong><a href="http://whatbrowser.org/">Your browser is quite old!</strong> Why not upgrade to a different browser to better enjoy this site?</a></div><![endif]-->
+<nav id="dl-menu" class="dl-menuwrapper" role="navigation">
+	<button class="dl-trigger">Open Menu</button>
+	<ul class="dl-menu">
+		<li><a href="/">Home</a></li>
+		<li><a href="/career">Career</a></li>
+		<li>
+			<a href="#">About</a>
+			<ul class="dl-submenu">
+				<li>
+					<img src="" alt="Garena Labs photo" class="author-photo">
+					<h4>Garena Labs</h4>
+					<p></p>
+				</li>
+				<li><a href="//www.zimmerman.io">Learn More</a></li>
+				
+				<li>
+					<a href="http://twitter.com/Garena_SG"><i class="fa fa-twitter"></i> Twitter</a>
+				</li>
+				
+				<li>
+					<a href="http://github.com/garena"><i class="fa fa-github"></i> GitHub</a>
+				</li>
+			</ul><!-- /.dl-submenu -->
+		</li>
+		<li>
+			<a href="#">Posts</a>
+			<ul class="dl-submenu">
+				<li><a href="/posts/">All Posts</a></li>
+				<li><a href="/categories/">All Categories</a></li>
+			</ul>
+		</li>
+		
+	</ul><!-- /.dl-menu -->
+</nav><!-- /.dl-menuwrapper -->
+
+
+
+
+<div id="main" role="main">
+  <article class="hentry">
+    <header class="header-title">
+      <div class="header-title-wrap">
+        
+          <h1 class="entry-title"><a href="/blog/2014/07/18/android-prevent-webview-from-memory-leak/" rel="bookmark" title="Android Prevent webview from memory leak">Android Prevent webview from memory leak</a></h1>
+        
+        <h2>July 18, 2014</h2>
+      </div><!-- /.header-title-wrap -->
+    </header>
+    <div class="entry-content">
+      <p>In Android app development, webview is widely used.  However, if you are using webview without caution, it will easily consume a lot of memory.  And your app may even crash due to insufficient memory.</p>
+
+<p>The memory issue of webview is well-known, here are two great links about the issue.</p>
+
+<p><a href="http://stackoverflow.com/questions/3130654/memory-leak-in-webview">Post in English</a></p>
+
+<p><a href="http://my.oschina.net/zhibuji/blog/100580">Post in Chinese</a></p>
+
+<p>For Android  4.4 and above, Android is using chromium as the core of webview. For Android 3.1 to 4.3, Android is using webkit as the core of webview. Most of the memory leak happens on webkit.</p>
+
+<p>And the blog will briefly summarize the tips to prevent webview memory leak</p>
+
+<!-- more -->
+
+
+<p>Tip 1:
+When clearing the webview reference. Simply set it to null is not enough. <code>webview.destroy()</code> must be called.
+Example code:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Override</span>
+</span><span class='line'><span class="kd">public</span> <span class="kt">void</span> <span class="nf">onDestroy</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">super</span><span class="o">.</span><span class="na">onDestroy</span><span class="o">();</span>
+</span><span class='line'>    <span class="k">if</span><span class="o">(</span><span class="n">webView</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">webView</span><span class="o">.</span><span class="na">removeAllViews</span><span class="o">();</span>
+</span><span class='line'>        <span class="n">webView</span><span class="o">.</span><span class="na">destroy</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="n">webView</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Tip 2:
+Using application context when initializing webview. This means webview should not be initialized from xml. You need to create it programmatically.
+Example Code:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">WebView</span> <span class="n">webView</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WebView</span><span class="o">(</span><span class="n">getApplicationgContext</span><span class="o">());</span>
+</span><span class='line'><span class="n">LinearLayout</span> <span class="n">linearLayout</span> <span class="o">=</span> <span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">xxx</span><span class="o">);</span>
+</span><span class='line'><span class="n">linearLayout</span><span class="o">.</span><span class="na">addView</span><span class="o">(</span><span class="n">webView</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>By doing this, 90% of the time, webview memory consumption is no longer an issue. However, if you want to play a full screen video in your webview, the <code>onShowCustomerView</code> of <code>WebChromeClient</code> will be triggered. And before <code>onShowCustomerView</code> is triggered, the Webkit will do some preprocessing. Due to a bug in Webkit&rsquo;s implementation, a static variable in <code>html5videoviewproxy</code> will hold the webview&rsquo;s reference which will caused a leak and you cannot do much about it.</p>
+
+<p>Another problem using application context is that when your webview wants to popup a window. In webview&rsquo;s default behaviour, there is a cast from <code>ApplicationContext</code> to <code>ActivityContext</code> which will cause your app crash. Of course, you can implement your own method of handling popup to walk around this problem, but it takes a lot of unnecessary effort.</p>
+
+<p>P.S. we can inject javascript into webview to do many tricks. I will later post another blog about using javascript in webview.</p>
+
+<p>Tip 3:
+I personally did not test this method, but I think the method is creative and instructive so I am noticing it down here.</p>
+
+<p>The main idea is webkit does not provide us a method to release the reference, so let us do it ourself by reflection. The reason why I did not use it is because it highly depends on webkit&rsquo;s implementation and you have to write different code for different Android versions.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kt">void</span> <span class="nf">setConfigCallback</span><span class="o">(</span><span class="n">WindowManager</span> <span class="n">windowManager</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">Field</span> <span class="n">field</span> <span class="o">=</span> <span class="n">WebView</span><span class="o">.</span><span class="na">class</span><span class="o">.</span><span class="na">getDeclaredField</span><span class="o">(</span><span class="s">&quot;mWebViewCore&quot;</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">field</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="na">getType</span><span class="o">().</span><span class="na">getDeclaredField</span><span class="o">(</span><span class="s">&quot;mBrowserFrame&quot;</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">field</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="na">getType</span><span class="o">().</span><span class="na">getDeclaredField</span><span class="o">(</span><span class="s">&quot;sConfigCallback&quot;</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">field</span><span class="o">.</span><span class="na">setAccessible</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">Object</span> <span class="n">configCallback</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="kc">null</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="kc">null</span> <span class="o">==</span> <span class="n">configCallback</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">return</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">field</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="na">getType</span><span class="o">().</span><span class="na">getDeclaredField</span><span class="o">(</span><span class="s">&quot;mWindowManager&quot;</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">field</span><span class="o">.</span><span class="na">setAccessible</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">field</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">configCallback</span><span class="o">,</span> <span class="n">windowManager</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span> <span class="k">catch</span><span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Call the method in onCreate and onDestroy</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">setConfigCallback</span><span class="o">((</span><span class="n">WindowManager</span><span class="o">)</span><span class="n">getApplicationContext</span><span class="o">().</span><span class="na">getSystemService</span><span class="o">(</span><span class="n">Context</span><span class="o">.</span><span class="na">WINDOW_SERVICE</span><span class="o">));</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">public</span> <span class="kt">void</span> <span class="nf">onDestroy</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">setConfigCallback</span><span class="o">(</span><span class="kc">null</span><span class="o">);</span>
+</span><span class='line'>    <span class="kd">super</span><span class="o">.</span><span class="na">onDestroy</span><span class="o">();</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Ultimate Tip:
+This method is the ultimate way to solve the problem and many well-known app such as QQ and Wechat are using it as well.</p>
+
+<p>The idea is to start a separate process for webview and kill the process when existing the webview. The drawback of doing this is that you need to handle interprocess communication carefully. My suggestion is you can create a <code>preProcessProxy</code> and <code>postProcessProxy</code> to handle IPC and passing information around using intent.</p>
+
+<p>Example code:
+define webview activity in a separate process</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;activity</span>
+</span><span class='line'> <span class="na">android:name=</span><span class="s">&quot;.webview.WebViewActivity&quot;</span>
+</span><span class='line'> <span class="na">android:launchMode=</span><span class="s">&quot;singleTop&quot;</span>
+</span><span class='line'> <span class="na">android:process=</span><span class="s">&quot;:remote&quot;</span>
+</span><span class='line'> <span class="na">android:screenOrientation=</span><span class="s">&quot;unspecified&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Kill the process when destroying the activity</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Override</span>
+</span><span class='line'><span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onDestroy</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">super</span><span class="o">.</span><span class="na">onDestroy</span><span class="o">();</span>
+</span><span class='line'>    <span class="n">System</span><span class="o">.</span><span class="na">exit</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To sum up:
+If you are using webview for simple use, use application context to start webview is enough.
+If your webview needs to do some complex actions such as playing video or dealing popups, start it in a different process.</p>
+
+      <footer class="entry-meta">
+        <span class="entry-tags"></span>
+        <span><a href="/blog/2014/07/18/android-prevent-webview-from-memory-leak/" rel="bookmark" title="Android Prevent webview from memory leak">Android Prevent webview from memory leak</a> was published on <span class="entry-date date published updated"><time datetime="2014-07-18T14:40:33+08:00">July 18, 2014</time></span></span>
+        
+        <span class="author vcard"><span class="fn"><a href="/" title="About Xiang Yongzhou">Xiang Yongzhou</a></span></span>
+        
+      </footer>
+    </div><!-- /.entry-content -->
+    
+      <div class="read-more">
+        
+          <div class="read-more-header">
+            <a href="/blog/2015/10/15/memory-leak-caused-by-drawable-in-gingerbread/" class="btn">Read More</a>
+          </div><!-- /.read-more-header -->
+          <div class="read-more-content">
+            <h3><a href="/blog/2015/10/15/memory-leak-caused-by-drawable-in-gingerbread/" title="Memory Leak caused by Drawable in Gingerbread">Memory Leak caused by Drawable in Gingerbread</a></h3>
+            <p>In the previous [post](/blog/2014/09/10/android-memory-leaks/), we have briefly introduced memory leak in Android. Memory leak is one of &hellip;&hellip; <a href="/blog/2015/10/15/memory-leak-caused-by-drawable-in-gingerbread/"> Continue reading</a></p>
+          </div><!-- /.read-more-content -->
+        
+        <div class="read-more-list">
+          
+            <div class="list-item">
+              <h4><a href="/blog/2015/10/13/hello-marshmallow-runtime-runtime-permission/" title="Hello Marshmallow - Runtime Permission">Hello Marshmallow - Runtime Permission</a></h4>
+              <span>Published on October 13, 2015</span>
+            </div><!-- /.list-item -->
+          
+            <div class="list-item">
+              <h4><a href="/blog/2015/05/24/a-shot-of-espresso/" title="A Shot of Espresso">A Shot of Espresso</a></h4>
+              <span>Published on May 24, 2015</span>
+            </div><!-- /.list-item -->
+          
+        </div><!-- /.read-more-list -->
+      </div><!-- /.read-more -->
+    
+    <section id="disqus_thread"></section><!-- /#disqus_thread -->
+  </article>
+</div><!-- /#main -->
+
+<div class="footer-wrapper">
+  <footer role="contentinfo">
+    <span>&copy; 2015 Garena Labs. Powered by <a href="http://octopress.org">Octopress</a> using the <a href="https://github.com/Z1MM32M4N/hpstr-theme/">HPSTR Theme for Octopress</a>.</span>
+
+  </footer>
+</div><!-- /.footer-wrapper -->
+
+
+	        
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script>window.jQuery || document.write('<script src="/javascripts/vendor/jquery-1.9.1.min.js"><\/script>')</script>
+<!--
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+-->
+<script src="/javascripts/scripts.min.js"></script>
+
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-53779472-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'garenalabs';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://garena.github.io/blog/2014/07/18/android-prevent-webview-from-memory-leak/';
+        var disqus_url = 'http://garena.github.io/blog/2014/07/18/android-prevent-webview-from-memory-leak/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+	        
+
+</body>
+</html>

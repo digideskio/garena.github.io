@@ -1,0 +1,1137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Android | Engineering @ garena]]></title>
+  <link href="http://garena.github.io/blog/categories/android/atom.xml" rel="self"/>
+  <link href="http://garena.github.io/"/>
+  <updated>2015-10-21T13:37:48+08:00</updated>
+  <id>http://garena.github.io/</id>
+  <author>
+    <name><![CDATA[Garena Labs]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Hello Marshmallow - Runtime Permission]]></title>
+    <link href="http://garena.github.io/blog/2015/10/13/hello-marshmallow-runtime-runtime-permission/"/>
+    <updated>2015-10-13T21:02:49+08:00</updated>
+    <id>http://garena.github.io/blog/2015/10/13/hello-marshmallow-runtime-runtime-permission</id>
+    <content type="html"><![CDATA[<p>We never care about new release of Android operating system. Three reasons. Firstly, there were hardly any broken changes and the new operating system promised to be compatible with the legacy. Secondly, it took months for the non-Nexus user to get the OTA and the adaption for new OS happens in a slow pace, i.e. Lollipop only hits around 20% in the global Android distribution. Thirdly, we don&rsquo;t have enough manpower to bother with new OS and engineers is occupied by one feature after another. However, the new Android 6.0 really grab our attention since it broke two barriers: the new operating system introduces breaking changes with the new permission system and the slightly bigger team want to deal with it.</p>
+
+<h2>Timeline</h2>
+
+<p>OTA for Nexus devices kicks off at the first week of October 2015 and many more manufactures pledged their support by the end of 2015. So roughly we have <em>three months</em> to deal with the issues.</p>
+
+<h2>What&rsquo;s happening?</h2>
+
+<p>Quoted from <a href="https://developer.android.com/about/dashboards/index.html">offical dashboard</a>.</p>
+
+<p><img src="/images/android-dashbord-2015-oct.png" alt="Official Dashboard" /></p>
+
+<p>Our initial thoughts are</p>
+
+<ul>
+<li>Southeast Asia is in an older OS compared to the rest of the world.</li>
+<li>The coverage of the latest OS is not significant in the countries we do business with.</li>
+</ul>
+
+
+<p>It turns out our assumptions do not hold at all. We choose one app which is being distributed in Thailand and get the distribution data from Google Play developer console. Apparently people in Thailand are not stick to old fashioned operating system and we should worry about what gonna happen in three months' time.</p>
+
+<p><img src="/images/th-android-app-comparison.png" alt="Global VS Thailand" /></p>
+
+<h2>What&rsquo;s new in Marshmallow?</h2>
+
+<p>The full list can be found <a href="https://developer.android.com/about/versions/marshmallow/android-6.0-changes.html">here</a>. Two things get our attention:</p>
+
+<ul>
+<li>Runtime permission</li>
+<li>Doze &amp; app standby</li>
+</ul>
+
+
+<p>This post will focus one Runtime Permission.</p>
+
+<p>There are tons of resources about runtime permission.</p>
+
+<ul>
+<li><a href="https://www.youtube.com/watch?v=C8lUdPVSzDk">Video &ndash; Runtime permission</a></li>
+<li><a href="https://www.youtube.com/watch?v=iZqDdvhTZj0">Video &ndash; Asking for Permission</a></li>
+</ul>
+
+
+<p>Well, we care about what is hidden under the hood.</p>
+
+<h2>Permission or Permissions</h2>
+
+<p>The documentation never specifies the behavior when you request permissions in one Permission Group. For example, you want to access the location so that you check the permission <code>ACCESS_FINE_LOCATION</code> and <code>ACCESS_COARSE_LOCATION</code>.
+```java
+ if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||</p>
+
+<pre><code>            ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+        // location permissions have not been granted.
+        requestLocationPermission();
+        return;
+    }
+</code></pre>
+
+<p>```</p>
+
+<p>Then you ask for permission.</p>
+
+<p>```java</p>
+
+<pre><code>private static String[] PERMISSIONS_LOCATION = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION};
+
+private void requestLocationPermission() {
+
+    if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)){
+
+        // Provide an additional rationale to the user if the permission was not granted
+        // and the user would benefit from additional context for the use of the permission.
+        // For example, if the request has been denied previously.
+
+        // Display a SnackBar with an explanation and a button to trigger the request.
+        Snackbar.make(mainLayout, R.string.track_down_wherever_you_are, Snackbar.LENGTH_INDEFINITE)
+                .setAction(R.string.ok, new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        ActivityCompat.requestPermissions(HomeActivity.this, PERMISSIONS_LOCATION,
+                                ACCESS_LOCATION_PERMISSION_REQUEST_CODE);
+                    }
+                })
+                .show();
+    } else {
+        // Contact permissions have not been granted yet. Request them directly.
+        ActivityCompat.requestPermissions(this, PERMISSIONS_LOCATION, ACCESS_LOCATION_PERMISSION_REQUEST_CODE);
+    }
+}
+</code></pre>
+
+<p>```</p>
+
+<p>and we implement the callbacks</p>
+
+<p>```java</p>
+
+<pre><code>@Override
+public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                       @NonNull int[] grantResults) {
+    if (requestCode == ACCESS_LOCATION_PERMISSION_REQUEST_CODE){
+        if (verifyPermissions(grantResults)){
+            //perform the action
+            acquireLocation();
+        }else{
+            Snackbar.make(mainLayout, R.string.cannot_access_location, Snackbar.LENGTH_SHORT).show();
+        }
+    }
+}
+
+public static boolean verifyPermissions(int[] grantResults) {
+    // At least one result must be checked.
+    if (grantResults.length &lt; 1) {
+        return false;
+    }
+
+    // Verify that each required permission has been granted, otherwise return false.
+    for (int result : grantResults) {
+        if (result != PackageManager.PERMISSION_GRANTED) {
+            return false;
+        }
+    }
+    return true;
+}
+</code></pre>
+
+<p>```</p>
+
+<p>This code won&rsquo;t work becuase the <code>verifyPermissions</code> returns false!</p>
+
+<p>According to the definition of <a href="https://developer.android.com/training/permissions/requesting.html">permission group</a></p>
+
+<blockquote><p>The user only needs to grant permission once for each permission group. If your app requests any other permissions in that group (that are listed in your app manifest), the system automatically grants them.</p></blockquote>
+
+<p>What they miss is that once the group permission is granted, the grant results for other permission in one group must be <code>PackageManager.PERMISSION_DENIED</code>.</p>
+
+<p>However, you cannot put one representative permission when you request access for the permission group, as Google clearly claims</p>
+
+<blockquote><p>Your app still needs to explicitly request every permission it needs, even if the user has already granted another permission in the same group. In addition, the grouping of permissions into groups may change in future Android releases. Your code should not rely on the assumption that particular permissions are or are not in the same group.</p></blockquote>
+
+<p>In conclusion, you shall never trust the <code>grantResults</code> and always check the permission one by one.</p>
+
+<h2>Alternative</h2>
+
+<p>Apparently Google recommends app not to ask for permission if unnecessary. However if the app does not have the <code>CAMERA</code> permission, it cannot fire intent to get the default app running. We are not sure if this is a bug or not.</p>
+
+<h2>Threading</h2>
+
+<p>Our demo app shows that it is fine to check the permission on background thread as long as you have a context. However, you cannot ask for permission without an activity as the API available is</p>
+
+<p><code>java
+public static void requestPermissions (Activity activity, String[] permissions, int requestCode)
+</code></p>
+
+<p>You need an <strong>activity</strong> to ask for permissions.</p>
+
+<p>Additionally, it is possible to call <code>requestPermission()</code> on the background thread and the dialog will show up. However since the result will reach you via the callback <code>onRequestPermissionsResult</code> on main thread,  you shall avoid calling the <code>requestPermission</code> on background thread to avoid nasty threading issue.</p>
+
+<h2>Upgrade Strategy</h2>
+
+<p>Initially we believe Google will take the approach like other 3rd party ROM does: if you don&rsquo;t get the permission, you will get nothing back and the UI moves on. However it is not the case. If you don&rsquo;t have the access the location, query the location API will break the app.</p>
+
+<p>```java
+java.lang.SecurityException: &ldquo;network&rdquo; location provider requires ACCESS_COARSE_LOCATION or ACCESS_FINE_LOCATION permission.</p>
+
+<pre><code>at android.os.Parcel.readException(Parcel.java:1599)
+at android.os.Parcel.readException(Parcel.java:1552)
+at android.location.ILocationManager$Stub$Proxy.requestLocationUpdates(ILocationManager.java:606)
+at android.location.LocationManager.requestLocationUpdates(LocationManager.java:880)
+at android.location.LocationManager.requestLocationUpdates(LocationManager.java:464)
+at com.garena.hellomarshmallow.HomeActivity.acquireLocation(HomeActivity.java:63)
+at com.garena.hellomarshmallow.HomeActivity.access$000(HomeActivity.java:15)
+at com.garena.hellomarshmallow.HomeActivity$1.onClick(HomeActivity.java:35)
+at android.view.View.performClick(View.java:5198)
+at android.view.View$PerformClick.run(View.java:21147)
+</code></pre>
+
+<p>```</p>
+
+<p>This forces us to rethink whether we should make app target to the latest SDK version.</p>
+
+<ul>
+<li>Don&rsquo;t target to API level 23 if you are not ready</li>
+<li>Feel free to update the SDK but keep the <code>targetSdkVersion</code> to 22 or lower</li>
+</ul>
+
+
+<p>```
+android {</p>
+
+<pre><code>compileSdkVersion 23
+buildToolsVersion "23.0.1"
+
+defaultConfig {
+    applicationId "com.garena.hellomarshmallow"
+    minSdkVersion 15
+    targetSdkVersion 22
+    versionCode 1
+    versionName "1.0"
+}
+</code></pre>
+
+<p>}
+```
+In this case, you will find all required permissions granted by default.</p>
+
+<p><img src="/images/permission-api-22.png" alt="Permission Granted" /></p>
+
+<p>However, we shall have <strong>NO</strong> excuse keeping this configuration as user can turn off the permission if they determine to do so.</p>
+
+<h2>The Most Challenging Part</h2>
+
+<p>Engineers need to convince the product managers that you need to invest a huge amount of time on something not a feature.</p>
+
+<p>This is not a feature, but a death sentence in the near future.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[A Shot of Espresso]]></title>
+    <link href="http://garena.github.io/blog/2015/05/24/a-shot-of-espresso/"/>
+    <updated>2015-05-24T11:37:22+08:00</updated>
+    <id>http://garena.github.io/blog/2015/05/24/a-shot-of-espresso</id>
+    <content type="html"><![CDATA[<p>The days without testing in Garena is long gone.  Our QA team has done a great job to provide continuous integration for BeeTalk and now it is the time for the engineering team to catch up.  So we set time aside to explore the continuous integration for our new Project.  Apparently Google has promoted <a href="https://code.google.com/p/android-test-kit/wiki/Espresso">Espresso</a> as the official framework for Android integration testing and it becomes our choice without second thought.</p>
+
+<h2>Configuration</h2>
+
+<p>We found Espresso easy to set up and the integration is just smooth. Add the dependency to <code>build.gradle</code>
+``` java</p>
+
+<pre><code>androidTestCompile('com.android.support.test.espresso:espresso-core:2.1'){
+    exclude group: 'javax.inject' //support 2.3
+}
+androidTestCompile 'com.android.support.test.espresso:espresso-intents:2.1'
+androidTestCompile 'com.android.support.test.espresso:espresso-contrib:2.1'
+androidTestCompile 'com.android.support.test:runner:0.2'
+</code></pre>
+
+<p>```</p>
+
+<p>For Android studio, simply create a new test configuration and it is all set.</p>
+
+<p><img src="/images/espresso.png" alt="Espresso Configuration" /></p>
+
+<p>Of course, you shall put all your test cases in <code>/src/androidTest</code>.</p>
+
+<h2>Write test cases</h2>
+
+<p>We are interested to write test cases to cover basic user operation, including login, registration and purchase, in which many network requests are involved.  We aim to achieve three things:</p>
+
+<ul>
+<li>Robust:  test cases should always work</li>
+<li>Lightweight:  zero impact or trivial modification to production code</li>
+<li>Efficient:  lower down the cost to run the test cases</li>
+</ul>
+
+
+<h4>Robustness</h4>
+
+<p>Our test cases are designed to cover the workflow with expected execution in mind.  Since we cannot run the logic without networking interaction, we decide to mock every single network request via our request wrapper.  For example, <code>TokenLoginRequest</code> is our class wrapper to fire a login request.</p>
+
+<p>```java
+public class TokenLoginRequest extends EndpointHttpRequest {</p>
+
+<pre><code>private String mMobileNumber, mToken;
+
+public TokenLoginRequest(OkHttpClient httpClient) {
+    super(httpClient);
+}
+
+public void setLoginInfo(String mobile, String token) {
+    mMobileNumber = mobile;
+    mToken = token;
+}
+
+@Override
+protected RequestBody body() {
+    return new FormEncodingBuilder().
+            add("token", mToken).
+            add("mobile", mMobileNumber).
+            build();
+}
+
+@Override
+public String getServiceName() {
+    return "services2/login/token/";
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>To mock it, simply override the implementation</p>
+
+<p>```java
+public class MockTokenLoginRequest extends TokenLoginRequest {</p>
+
+<pre><code>private Gson gson = new Gson();
+
+public MockTokenLoginRequest(OkHttpClient httpClient) {
+    super(httpClient);
+}
+
+@Override
+public Response execute() throws Exception {
+    CommonResponse response = new CommonResponse();
+    response.errorCode = NetworkConst.OK;
+    response.errorMessage = "ok";
+    return ResponseFactory.getJsonResponseBuilder(gson.toJson(response), postRequest());
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>With mocked API request, there is no way to fail a case due to unstable WIFI network. How to put the mock class in action? There are two ways, either via a factory class or perform injection. We utilize Dagger and define test modules to replace the default implementation</p>
+
+<p>```java</p>
+
+<pre><code>@Test
+public void loginViaOtp() throws Exception {
+    Intent intent = new Intent();
+    intent.putExtra("number_ui", MockOTPValidationRequest.STANDARD_LOGIN);
+    intent.putExtra("number_e164", MockOTPValidationRequest.STANDARD_LOGIN);
+
+    mActivityRule.launchActivity(intent);
+
+    //input the sms
+    onView(withId(R.id.cp_sms_code_input)).perform(typeText("111111"));
+
+    //inject the fake sms authentication
+    LoginSMSAuthActivity smsAuthActivity = (LoginSMSAuthActivity) getActivityInstance();
+    mockModule.inject(smsAuthActivity.presenter());
+
+    //click the button
+    onView(withId(R.id.cp_sms_confirm_btn)).perform(click());
+    //....
+} 
+</code></pre>
+
+<p>```</p>
+
+<p>You may not have the chance to perform the injection so easily due to complicated hierarchy but it is essential to keep the footprint small. In test cases, I really don&rsquo;t mind playing dirty tricks like reflection.</p>
+
+<h3>Lightweight</h3>
+
+<p>Test cases cannot pose any issue to the production code.  Gradle has offered great flexibility on how to separate debug code and production code, so does the case of testing.</p>
+
+<h4>Code Strucure</h4>
+
+<p><code>/src/androidTest</code></p>
+
+<ul>
+<li>hold all test cases</li>
+<li>supporting library</li>
+</ul>
+
+
+<p><code>/src/debug</code></p>
+
+<ul>
+<li>mock classes</li>
+</ul>
+
+
+<p><code>/src/release</code></p>
+
+<ul>
+<li>no mocking classes</li>
+</ul>
+
+
+<h4>Injection</h4>
+
+<p>As stated above, we provide mock implementation via injection but sometimes it is not that straight forward. In those case in which you have to inject the fake implementation at the early stage of the activity life cycle, we simply override the activity and inject as early as possible. In other cases, you may not want the navigation happen because you cannot inject an activity which does not exist.  The code snippet below shows how we handle both cases.</p>
+
+<p>```java
+public class TestLoginActivity extends LoginActivity {</p>
+
+<pre><code>ActivityScreenSwitcher mScreenSwitcher;
+
+@Override
+protected void onCreateComponent(AppComponent appComponent) {
+    //use the real app module
+    AppModule module = new AppModule(CyberpayAdminApp.getApp());
+    DebugAppUIModule uiModule = new DebugAppUIModule();
+    //get the real login session
+    UserModule userModule = new UserModule(CyberpayAdminApp.getApp().component().getLoginSession());
+    //customized app component
+    DebugAppComponent debugAppComponent = DaggerDebugAppComponent.builder().appModule(module).userModule(userModule)
+            .debugAppUIModule(uiModule).build();
+
+    mScreenSwitcher = debugAppComponent.activityScreenSwitcher();
+    mActivityComponent = DaggerMockRoutineComponent.builder().appComponent(debugAppComponent).
+                    mockRoutineModule(new MockRoutineModule()).build();
+    //perform the injection with mock implementation
+    mActivityComponent.inject(this);
+}
+//......
+</code></pre>
+
+<p>}
+<code>``
+</code>mActivitiyComponent<code>will be used to inject everything inside the activity, i.e. views, presenters and we provide</code>DebugAppUIModule<code>to intercept the intent for navigation and save for verification. In the test cases, you should invoke</code>TestLoginActivity<code>instead of</code>LoginActivity<code>.  At the first sight it looks scary, because even new **hacked** activities are introduced. Well, there is no chance to have them in the production because you shall have everything under the flavor of</code>debug`.</p>
+
+<h4>Async Trick</h4>
+
+<p>People always wonder how to test something asynchronous from the user perspective, i.e fire a network request and the activity moves to the next step. Espresso supports <code>AsyncTask</code> in its core implementation and offers flexibility to other async/task management framework. <a href="https://github.com/BoltsFramework/Bolts-Android">Bolts</a> is our choice of task management and our code is structured like this
+```java
+mContinueBtn.setOnClickListener(new View.OnClickListener() {</p>
+
+<pre><code>            @Override
+            public void onClick(View v) {
+                getView().showLoading();
+                mLoginRequest.setNumber(input);
+                Task.callInBackground(new Callable&lt;LoginInfo&gt;() {
+                      @Override
+                      public LoginInfo call() throws Exception {
+                            //make the request
+                            return mLoginRequest.getResponse();
+                      }
+                }).continueWith(new Continuation&lt;LoginInfo, Void&gt;() {
+                      @Override
+                      public Void then(Task&lt;LoginInfo&gt; task) throws Exception {
+                             getView().loadingView.setRefreshing(false);
+                             if (task.isFaulted()) {
+                                 activity.resolveError(task.getError());
+                             }
+                             //perform action 
+                             //......
+                            return null;
+                }, Task.UI_THREAD_EXECUTOR));
+</code></pre>
+
+<p>```</p>
+
+<p>We follow the <a href="https://code.google.com/p/android-test-kit/wiki/EspressoSamples#Using_registerIdlingResource_to_synchronize_with_custom_resource">recommendation from Google</a> but later we found that <a href="http://developer.android.com/reference/android/support/test/espresso/IdlingResource.html">IdlingResource</a> is poorly documented.</p>
+
+<blockquote><p><code>isIdleNow()</code> returns true if resource is currently idle. Espresso will always call this method from the main thread, therefore it should be non-blocking and return immediately.</p></blockquote>
+
+<p>You may ask why I should care about this. Well, here is the core idea behind this helper class. The system will check on it time by time after registration. Assume you have a state variable <code>mIsBusy</code> and <code>isIdleNow</code> will return the value of <code>mIsBusy</code>, you should always modify the value <code>mIsBusy</code> from the main thread, otherwise there is no guarantee that the test runner will stop before the asynchronous call completed.  Ideally, you shall have test case like this</p>
+
+<p>```java</p>
+
+<pre><code>@Test
+public void loginTest() {
+
+
+    //attempt login 
+    onView(withId(R.id.login_button)).perform(click());
+
+    //FIRE NETWORK REQUEST......
+    //WAIT UNTIL THE SERVER RETURNS THE RESULT
+
+    //verify which activity it is now
+    assertTrue(getActivityInstance() instanceof HomeActivity);
+}
+</code></pre>
+
+<p>```</p>
+
+<p>You cannot change the <code>mIsBusy</code> before you click the login button, otherwise nobody will trigger the login action. You cannot change the value after the login button because you don&rsquo;t know when the network response will modify the value.  It seems to be a deadlock and the solution is to change the value right after the user clicks the button.</p>
+
+<p>```java</p>
+
+<p>mContinueBtn.setOnClickListener(new View.OnClickListener() {</p>
+
+<pre><code>            @Override
+            public void onClick(View v) {
+
+                //MODIFY THE mIsBusy FROM MAIN THREAD
+                mIsBusy = true;
+
+               //fire network request
+            });
+</code></pre>
+
+<p>```</p>
+
+<p>A static variable cannot serves well for multiple network requests in sequence (they cannot decide when to flip the value). Additionally the production code should be unaware of <code>IdlingResource</code> presence.  Thus we comes with a helper class in <code>main</code> sources.</p>
+
+<p>```java
+public class NetworkStatus {</p>
+
+<pre><code>private static long mStartTime;
+
+private static int mCount = 0;
+
+/**
+ * Mark a new checkpoint of background requests, must call via UI thread.
+ */
+public static void onNetworkRequestStart() {
+    if (!BuildConfig.DEBUG) {
+        return;
+    }
+    synchronized (NetworkStatus.class) {
+        mCount++;
+        mStartTime = BBTimeHelper.millNow();
+    }
+}
+
+/**
+ * Mark a new checkpoint of background requests, recommend to call via UI thread but not necessary to do so
+ */
+public static void onNetworkRequestEnd() {
+    if (!BuildConfig.DEBUG) {
+        return;
+    }
+    synchronized (NetworkStatus.class) {
+        mCount--;
+        BBAppLogger.i("execution time %d", BBTimeHelper.millNow() - mStartTime);
+    }
+}
+
+/**
+ * Accessed via UI thread only
+ *
+ * @return true if no network task is ongoing
+ */
+public static boolean isIdle() {
+    return mCount == 0;
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>and subclass the <code>IdlingResource</code> in <code>androidTest</code></p>
+
+<p>```java
+public class NetworkIdlingResource implements IdlingResource {</p>
+
+<pre><code>@Override
+public String getName() {
+    return "network_mock";
+}
+
+@Override
+public boolean isIdleNow() {
+    boolean idle = NetworkStatus.isIdle();
+    if (idle &amp;&amp; mCallback != null) {
+        mCallback.onTransitionToIdle();
+    }
+    return idle;
+}
+
+private ResourceCallback mCallback;
+
+@Override
+public void registerIdleTransitionCallback(ResourceCallback resourceCallback) {
+    mCallback = resourceCallback;
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Thus the production code should call <code>NetworkStatus.onNetworkRequestStart</code> from main thread before firing a network request and call <code>NetworkStatus.onNetworkRequestEnd</code> from main thread after a network requests completes.  Trivial modification is made and goal accomplished.</p>
+
+<h3>Efficient</h3>
+
+<p>Android fragmentation scares people and many developers only test their application on physical devices. Ironically, most of bugs are caused by logic errors rather than device variance.  We choose Genymotion for continuous integration with <a href="https://jenkins-ci.org/">Jenkins</a>. Here is the setup</p>
+
+<ul>
+<li>Ubuntu 14.04 LTS on a lower end Dell laptop</li>
+<li>3 Genymotion instances (Android 4.3, 4.4, 5.1)</li>
+<li>Connect to Jenkins machine with direct cable</li>
+</ul>
+
+
+<p>Genymotion is much faster than physical devices and the three instance can fire concurrently. 63 tests can finish with 3 minutes.</p>
+
+<p><img src="/images/jenkins_espresso.png" alt="Espresso with Jenkins" /></p>
+
+<p>You can add as many VM or physical devices as you want and trigger the testing via
+```groovy
+./gradlew connectedAndroidTestDebug</p>
+
+<p>```</p>
+
+<p> ## Conclusion
+Our journey with Espresso or continuous integration does not end here and we are working on a couple of things like</p>
+
+<ul>
+<li>write test cases against our server API</li>
+<li>apply espresso to test shared libraries</li>
+<li>test upon different flavors</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Powered by Dagger 2]]></title>
+    <link href="http://garena.github.io/blog/2015/05/19/powered-by-dagger-2/"/>
+    <updated>2015-05-19T17:15:10+08:00</updated>
+    <id>http://garena.github.io/blog/2015/05/19/powered-by-dagger-2</id>
+    <content type="html"><![CDATA[<p>There are a lots of buzz about Android architecture recently. We feel excited about the evolvement of Android development and decide to give a try for production. After a few trials and errors, we are settled with the combination of <a href="http://google.github.io/dagger/">Dagger 2</a> and <a href="https://code.google.com/p/android-test-kit/wiki/Espresso">Espresso</a>. We feel happy with it and would like to share our experience with Dagger 2 in this post.</p>
+
+<h2>Pros</h2>
+
+<p>We start with <a href="http://square.github.io/dagger/">Dagger 1</a> from Square and loves the concept. It is a brand new way for us to get rid of ugly singleton pattern and structure the code in an elegant manner.  Additionally, it fundamentally resolves the issues of dependency and acquiring resource is not an problem any more.</p>
+
+<p>Later we learn about the even awesome <code>Dagger 2</code>, it immediately catches our attention for those features we actually cares. The code generation avoids the tricks of reflection and fixed class naming, thus 100% friendly to proguard. Nevertheless, developers still have to decide how to structure the code. The great flexibility is prone to over engineering and eventually you will find a deadlock when attempting to run unit tests. Dependency injection brings the advantage of data mocking and we start with simple use case.</p>
+
+<h3>Dagger for Development</h3>
+
+<p>Assume you want to initiate a Http request after the user clicks a button. The code below shows how it works without dependency injection.</p>
+
+<p>``` java</p>
+
+<pre><code>private LoginRequest mRequest;
+
+@onClick(R.id.login)
+void loginButtonOnClicked(){
+     Task.callInBackGround {
+     Response rp = mRequest.post()
+ }. onSuccess {
+    //Update the UI
+ }
+}
+</code></pre>
+
+<p>```</p>
+
+<p>It is very straight forward, but using the production server or testing server is slow and you may hit limited number of login per day etc. Dagger saves our lives by <code>Qualifier</code>. To start with, you define a qualifier to distinguish implementation for production and internal testing.</p>
+
+<p>```java</p>
+
+<p>   @Qualifier
+   @Retention(RUNTIME)
+   public @interface MockMode {</p>
+
+<pre><code>   String value() default "";  //true/false
+</code></pre>
+
+<p>   }  <br/>
+```</p>
+
+<p>Then you can provide different implementation based on the qualifier.</p>
+
+<p>```java</p>
+
+<pre><code>public class MockLoginRequest extends LoginRequest {
+    //skip the network call and fake the result
+}
+
+@Provides
+@MockMode("mock")
+LoginRequest getMockLoginRequest(OkHttpClient httpClient) {
+    return new MockLoginRequest(httpClient);
+}
+
+@Provides
+@MockMode("prod")
+LoginRequest getPasscodeRequest(OkHttpClient httpClient) {
+    return new LoginRequest(httpClient);
+}      
+</code></pre>
+
+<p>```</p>
+
+<p>If you want to fire the fake <code>LoginRequest</code>
+``` java</p>
+
+<pre><code>@MockMode("mock")       
+private LoginRequest mRequest;
+</code></pre>
+
+<p>```
+or you want to connect to the real server</p>
+
+<p>``` java</p>
+
+<pre><code>@MockMode("prod")       
+private LoginRequest mRequest;
+</code></pre>
+
+<p>```</p>
+
+<p>In any case, you should not have debug code in production and Dagger is right there to offer the hand with gradle flavor.  You shall always have the definition <code>MockLoginRequest</code> in the debug flavor and define two modules in <code>release</code> and <code>debug</code> flavor.</p>
+
+<p>Only the production code will go into the <code>release</code> module.</p>
+
+<p>```java</p>
+
+<pre><code>@Provides
+@MockMode("prod")
+LoginRequest getInitPasscodeRequest(OkHttpClient httpClient) {
+    return new LoginRequest(httpClient);
+}      
+</code></pre>
+
+<p>```
+Offer more choice in debug flavor only.</p>
+
+<p>```java</p>
+
+<p>@Provides
+@MockMode(&ldquo;mock&rdquo;)
+LoginRequest getMockLoginRequest(OkHttpClient httpClient) {</p>
+
+<pre><code>return new MockLoginRequest(httpClient);
+</code></pre>
+
+<p>}</p>
+
+<p>@Provides
+@MockMode(&ldquo;prod&rdquo;)
+LoginRequest getInitPasscodeRequest(OkHttpClient httpClient) {</p>
+
+<pre><code>return new LoginRequest(httpClient);
+</code></pre>
+
+<p>}    <br/>
+```</p>
+
+<p>If you misuse the qualifier, the compilation will fail and you will immediately know that something goes wrong.</p>
+
+<h3>Dig Deeper</h3>
+
+<p>You need to structure the code around Dagger. Generally we have</p>
+
+<ul>
+<li><code>AppComponent</code>: base component for sub components</li>
+<li><code>AppModule</code>: provides application context</li>
+<li><code>UserModule</code>: provides user information, i.e. <code>LoginSession</code></li>
+<li><code>NetworkModule</code>:  provides implementation of network class, i.e <code>OkHttpClient</code>,<code>Gson</code></li>
+<li><code>UIModule</code>:  provides implementation for naviagtion</li>
+<li>Activity specific modules: provides domain related resources, i.e. <code>LoginRequest</code>, <code>PurcahseRequest</code></li>
+</ul>
+
+
+<p>```java AppComponent.java
+@ApplicationScope
+@Component(</p>
+
+<pre><code>    modules = {AppModule.class, NetworkModule.class, AppUIModule.class, UserModule.class}
+</code></pre>
+
+<p>)
+public interface AppComponent {</p>
+
+<pre><code>   Gson getGson();
+   //other implementation
+</code></pre>
+
+<p>}</p>
+
+<p>```</p>
+
+<p>In sub components, utilize the domain-related module for injection</p>
+
+<p>```java HomeModule.java
+@Module
+public class HomeModule {</p>
+
+<pre><code>@Provides
+@MockMode("prod")
+GetUserInfoRequest getUserInfoRequest(OkHttpClient httpClient, Gson gson, LoginSession session) {
+    return new GetUserInfoRequest(httpClient, gson, session);
+}
+
+//offer other modules
+</code></pre>
+
+<p>}
+```
+Quote the module in the component</p>
+
+<p>```java HomeComponent.java
+@HomeScope
+@Component(</p>
+
+<pre><code>    dependencies = {AppComponent.class},
+    modules = {HomeModule.class})
+</code></pre>
+
+<p>public interface HomeComponent {</p>
+
+<pre><code>void inject(HomeActivity activity);
+</code></pre>
+
+<p>}
+```</p>
+
+<p>So when can we get hold of the component and perform the injection?</p>
+
+<p>You definitely want everything ready before the resource is needed. The activity component should be created at the very beginning of the activity life cycle, i.e. <code>onCreate</code> for <code>Activity</code> and the activity performs the injection to views or UI presenters immediately after their new birth. As you may be aware, there are two ways of injection, either injection via constructor or injection via annotation. In general, we favor injection via annotation due to flexibility.</p>
+
+<h3>Even Better in Testing</h3>
+
+<p>Dagger brings much more flexibility to testing as you can easily swap the implementation via injection. For simple structure, as long as you can grab the reference to the object, you can perform injection.</p>
+
+<p>```java</p>
+
+<pre><code>    //input the sms
+    onView(withId(R.id.cp_sms_code_input)).perform(typeText("111111"));
+
+    //inject the fake sms authentication
+    LoginSMSAuthActivity smsAuthActivity = (LoginSMSAuthActivity) getActivityInstance();
+    mockModule.inject((LoginSMSAuthActivity.UIPresenter) smsAuthActivity.presenter());
+
+    //click the button
+    onView(withId(R.id.cp_sms_confirm_btn)).perform(click());
+</code></pre>
+
+<p>```
+The combination of Dagger and Espresso is just awesome but it is never short of work around and fixes. We shall talk more about this topic in the next post.</p>
+
+<h2>Cons</h2>
+
+<h3>More Methods</h3>
+
+<p>Dagger will increase the method count without grace. If you find the size of dex is growing out of control due to massive feature requirement, do think twice before triggering the magic of code generation.</p>
+
+<h3>No Second Chance</h3>
+
+<p><code>Volley</code> is interchangeable with <code>OkHttp</code>, you can always switch implementation if one outperforms another. However,  once you design the app around <code>Dagger</code>, you have to stick to it since there is no alternative available to replace the code structure. Vice versa, it is going to take enormous effort to adapt Dagger half way. In other words, you have to make your mind when you start the project.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[What Works for Us So Far - Ormlite]]></title>
+    <link href="http://garena.github.io/blog/2014/07/18/what-works-for-us-so-far-ormlite/"/>
+    <updated>2014-07-18T13:33:30+08:00</updated>
+    <id>http://garena.github.io/blog/2014/07/18/what-works-for-us-so-far-ormlite</id>
+    <content type="html"><![CDATA[<h3><a href="http://ormlite.com/sqlite_java_android_orm.shtml">Ormlite</a></h3>
+
+<p>Ormlite is the our choice of database ORM. Although we have decided to stick to it for new Android applications, there are quite a few thing missing in the manual.</p>
+
+<h3>Name the Database</h3>
+
+<p>Normally you name the databas with user ID like this.</p>
+
+<p>```java</p>
+
+<p>String databaseName = String.format(&ldquo;user_%d.db&rdquo;, mUserId);</p>
+
+<p>```</p>
+
+<p>Then you are screwed because you don&rsquo;t speak Persian/Arabian. In some languages, you cannot expect one as <code>1</code> and this <a href="http://en.wikipedia.org/wiki/Eastern_Arabic_numerals">wiki post</a> will show you a new way to write numbers. You can reproduce this issue by switching the locale to Arabic on the phone and you must stay clam if the app cannot find the database. The fix is simple, just specify the locale when formatting the string.</p>
+
+<p>```java</p>
+
+<p>String databaseName = String.format(Locale.ENGLISH,&ldquo;user_%d.db&rdquo;, mUserId);</p>
+
+<p>```</p>
+
+<!-- more -->
+
+
+<h3>Name the Column</h3>
+
+<p>Well, you have the database now and go ahead to create tables. Take the example from the website:</p>
+
+<p>```java</p>
+
+<p>@DatabaseTable(tableName = &ldquo;accounts&rdquo;)
+public class Account {</p>
+
+<pre><code>@DatabaseField(id = true)
+private String name;
+
+@DatabaseField(canBeNull = false)
+private String password;
+...
+Account() {
+    // all persisted classes must define a no-arg constructor with at least package visibility
+}
+...
+</code></pre>
+
+<p>}
+```</p>
+
+<p>If you are going to run proguard, then you may be screwed because the column changes. There are two solutions to this, either naming the columb explicitly or make all database object class excluded from proguard, as shown below.</p>
+
+<p>```java</p>
+
+<p>APPROACH ONE &ndash; Name the column explicitly</p>
+
+<p>@DatabaseTable(tableName = &ldquo;accounts&rdquo;)
+public class Account {</p>
+
+<pre><code>@DatabaseField(id = true,columnName = "name")
+private String name;
+
+@DatabaseField(canBeNull = false, columnName = "password")
+private String password;
+...
+Account() {
+    // all persisted classes must define a no-arg constructor with at least package visibility
+}
+...
+</code></pre>
+
+<p>}</p>
+
+<p>APPROACH TWO &ndash; Modify the proguard file</p>
+
+<p>-keep class com.XXXXXX.bean.<em>*{</em>;}</p>
+
+<p>```</p>
+
+<h3>Are those results cached?</h3>
+
+<p>Now you have the table and it is time to query the data out from the database. ORM generally makes your life easier but it does not mean that the app can get the data with ease. Ormlite claims that the result is cached but you have to do the homework yourself by following <a href="http://ormlite.com/javadoc/ormlite-core/doc-files/ormlite_5.html#Object-Caches">this guide</a>.</p>
+
+<p>However it only works for 4.48+, in 4.46, you may write code like this
+<code>java
+ mUserDao = DaoManager.createDao(getConnectionSource(), UserInfo.class);
+ mUserDao.setObjectCache(true);
+</code></p>
+
+<p>And we guarantee that it does NOT work at all.</p>
+
+<h3>Update the table</h3>
+
+<p>Database scheme always changes because PM always changes their mind.</p>
+
+<p>OrmLite provides callback for you to decide how to upgrade.</p>
+
+<p>```java
+@Override</p>
+
+<pre><code>public void onUpgrade(SQLiteDatabase sqLiteDatabase, ConnectionSource connectionSource, final int oldVersion, final int newVersion) {
+    if (newVersion &gt; oldVersion) {
+       //run upgrade
+    }
+}
+</code></pre>
+
+<p>```</p>
+
+<p>We follow this guide <a href="http://ormlite.com/javadoc/ormlite-core/doc-files/ormlite_4.html#Upgrading-Schema">here</a> and we were happy until PM changes his mind on how to contact the customers.</p>
+
+<p>```java
+ if (oldVersion &lt; 8 &amp;&amp; newVersion >= 8) {</p>
+
+<pre><code>TableUtils.createTableIfNotExists(connectionSource, Customer.class);
+</code></pre>
+
+<p> }</p>
+
+<p> &hellip;//A lot of thing happens here</p>
+
+<p> if (oldVersion &lt; 12 &amp;&amp; newVersion >= 12) {</p>
+
+<pre><code>  dao.executeRaw("ALTER TABLE `customer` ADD COLUMN contact_number VARCHAR DEFAULT ``;");
+</code></pre>
+
+<p> }
+```</p>
+
+<p>We were screwed because the app could not complete the upgrade after upgrade. The issue here is that you should not use <code>createTableIfNotExists</code> to update the database. Let&rsquo;s assume that the user wants to upgrade his database from version 7 to version 8. He gonna hit the 1st statement to create the database and before the 2nd statement runs, he already has the column named <em>customer</em>. The definition of <em>Customer</em> changes over time! You should always write raw query to update the database becuase the query won&rsquo;t change.</p>
+
+<p>```java
+ if (oldVersion &lt; 8 &amp;&amp; newVersion >= 8) {</p>
+
+<pre><code>dao.executeRaw("CREATE TABLE `customer` ......");
+</code></pre>
+
+<p> }</p>
+
+<p> &hellip;//A lot of thing happens here</p>
+
+<p> if (oldVersion &lt; 12 &amp;&amp; newVersion >= 12) {</p>
+
+<pre><code>dao.executeRaw("ALTER TABLE `customer` ADD COLUMN contact_number VARCHAR DEFAULT ``;");
+</code></pre>
+
+<p> }
+```</p>
+
+<p>Besides OrmLite, there are plenty of options out there and we have not got a chance to get hands on them. We are interested to explore <a href="http://sqlcipher.net/">SQLCipher</a> in the near future.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[What Works for Us So Far - Volley]]></title>
+    <link href="http://garena.github.io/blog/2014/07/13/what-works-for-us-so-far-volley/"/>
+    <updated>2014-07-13T17:15:15+08:00</updated>
+    <id>http://garena.github.io/blog/2014/07/13/what-works-for-us-so-far-volley</id>
+    <content type="html"><![CDATA[<p>There are quite a few open source projects which aims to accelerate Android application development. For example,
+<a href="http://java.dzone.com/articles/how-become-lazy-productive">this series</a> is a great summary on how to be &ldquo;lazy productive&rdquo;. All of those frameworks or tools look great at the first sight but they may screw up you when you drive deeper and deeper.</p>
+
+<p>To help you guys to make better decision, we want to share our experience and today let&rsquo;s starts with <a href="https://android.googlesource.com/platform/frameworks/volley/">Volley</a> from Google.</p>
+
+<h3><a href="https://android.googlesource.com/platform/frameworks/volley/">Volley</a></h3>
+
+<p>Volley debuts in Google IO last year and we fall in love with it quickly. It provides a complete set of toolkit to download anything via HTTP protocol. In addition to the general file download framework, it shows us a great example on how to download and process the images. With Volley, you don&rsquo;t need to worry about</p>
+
+<ul>
+<li>Establish the connection</li>
+<li>How to handle HTTP files</li>
+<li>How to handle the images</li>
+<li>Can extend to download anything</li>
+</ul>
+
+
+<!-- more -->
+
+
+<p>By default, Volley can help you download JSON and images, but it can help you to download anything.</p>
+
+<p>Build a simple byte data wrapper</p>
+
+<p>``` java
+public class ByteWrapper {</p>
+
+<pre><code>private byte[] data;
+
+public ByteWrapper(byte[] data) {
+    this.data = data;
+}
+
+public byte[] getData(){
+    return this.data;
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Then implement your own download request object</p>
+
+<p>``` java
+public class BinaryHttpRequest extends Request<ByteWrapper> {</p>
+
+<pre><code>private Response.Listener&lt;ByteWrapper&gt; mProcessor;
+
+public BinaryHttpRequest(int method, String url,Response.Listener&lt;ByteWrapper&gt; processor,Response.ErrorListener listener) {
+    super(method, url, listener);
+    mProcessor = processor;
+    //retry once
+    setRetryPolicy(new DefaultRetryPolicy(DefaultRetryPolicy.DEFAULT_TIMEOUT_MS, 2, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+}
+
+@Override
+protected Response&lt;ByteWrapper&gt; parseNetworkResponse(NetworkResponse response) {
+    byte[] data = response.data;
+    return Response.success(new ByteWrapper(data),this.getCacheEntry());
+}
+
+@Override
+protected void deliverResponse(ByteWrapper response) {
+    mProcessor.onResponse(response);
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>If you want to parse the bytes into JSON, you can easily write a callback similar to this</p>
+
+<p>```
+public abstract class BBJsonDownloadEvent implements DownloadEvent {</p>
+
+<pre><code>//OVERRIDE this class to process the JSON object
+protected abstract void onJSonObject(JSONObject obj) throws JSONException;
+
+@Override
+public void onError(int errorCode) {
+
+}
+
+@Override
+public void onFinish(byte[] data, int nLen) {
+    try {
+        String JSONString = new String(data, "UTF-8");
+        JSONObject response= new JSONObject(JSONString);
+        onJSonObject(response);
+    } catch (UnsupportedEncodingException |JSONException e) {
+        BBAppLogger.e(e);
+    }
+}
+
+@Override
+public void onDownloading(int nAllLen, int nPos) {
+
+}
+
+@Override
+public void onDestroy() {
+
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Then you just need to read the bytes and get what you want, happy eh :&ndash;)</p>
+
+<p>Soon after we drive Volley to do everything for us, we found ourselves in deep trouble. Apparently the memory usage is high and 10+ threads starts with the application. We dig the source and eventually realize we misuse the download queue. Normally we start the Volley download queue by
+<code>
+  Volley.newRequestQueue(); //now you get 6 idle threads
+</code>
+It is simple and elegant. Read the source code and we are shocked at the fact that it always starts 6 threads right away. We have a few request queue in different modules so Volley starts tons of useless threads when the applicaiton starts. The fix is simple &ndash; we make sure that all different modules share the same request queue (in another Singleton nightmare >&lt;).</p>
+
+<p>Then after upgrade to latest Volley, it screws up again because it always scales the full size images to fit the size for display :&ndash;(</p>
+
+<p>Well, sorry, Volley,we don&rsquo;t want you to be our default image loader anymore because user shall not download the images twice just because it gonna display in different sizes. We have built our own image loading solution which we pretty much copy the idea from Volley but backended by file downloading via in house protocol.  Essentially we follows those general principals to design our own image loading solution.</p>
+
+<ul>
+<li>Share the LRU cache</li>
+<li>engage synchorous loading if the bitmap is in cache</li>
+<li>engage asynchorous loading if we don&rsquo;t have the images ready (not in cache or need to download from the Internet)</li>
+</ul>
+
+
+<p>As conclusion, Volley inspires us to write a decent image processing module and it shows us a excellent lightweight design for network requests.</p>
+]]></content>
+  </entry>
+  
+</feed>

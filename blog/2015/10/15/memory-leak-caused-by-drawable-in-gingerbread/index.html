@@ -1,0 +1,336 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+
+<head>
+
+
+<meta charset="utf-8">
+<meta http-equiv="cleartype" content="on">
+
+<title>Memory Leak Caused by Drawable in Gingerbread - Engineering @ garena</title>
+<meta name="author" content="Garena Labs">
+
+
+
+
+<meta name="description" content="A Tech Blog by Garena Labs">
+
+<meta name="keywords" content=" ">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Twitter Cards -->
+
+  
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:image" content"">
+  
+  <meta name="twitter:title" content="Memory Leak caused by Drawable in Gingerbread">
+  <meta name="twitter:description" content="A Tech Blog by Garena Labs">
+  <meta name="twitter:creator" content="@Garena_SG">
+
+
+<!-- Open Graph -->
+<meta property="og:local" content="en_US">
+<meta property="og:type" content="article">
+<meta property="og:url" content="http://garena.github.io/blog/2015/10/15/memory-leak-caused-by-drawable-in-gingerbread">
+<meta property="og:title" content="Memory Leak caused by Drawable in Gingerbread">
+<meta property="og:description" content="A Tech Blog by Garena Labs">
+
+  <meta property="og:image" content="">
+
+<meta property="og:site_name" content="Engineering @ garena">
+
+<link rel="canonical" href="http://garena.github.io/blog/2015/10/15/memory-leak-caused-by-drawable-in-gingerbread">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+<link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+<link href="/atom.xml" rel="alternate" title="Engineering @ garena" type="application/atom+xml">
+
+<script src="/javascripts/modernizr.min.js"></script>
+
+
+
+<!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+</head>
+
+<body id="post" >
+
+<!--[if lt IE 9]><div class="upgrade"><strong><a href="http://whatbrowser.org/">Your browser is quite old!</strong> Why not upgrade to a different browser to better enjoy this site?</a></div><![endif]-->
+<nav id="dl-menu" class="dl-menuwrapper" role="navigation">
+	<button class="dl-trigger">Open Menu</button>
+	<ul class="dl-menu">
+		<li><a href="/">Home</a></li>
+		<li><a href="/career">Career</a></li>
+		<li>
+			<a href="#">About</a>
+			<ul class="dl-submenu">
+				<li>
+					<img src="" alt="Garena Labs photo" class="author-photo">
+					<h4>Garena Labs</h4>
+					<p></p>
+				</li>
+				<li><a href="//www.zimmerman.io">Learn More</a></li>
+				
+				<li>
+					<a href="http://twitter.com/Garena_SG"><i class="fa fa-twitter"></i> Twitter</a>
+				</li>
+				
+				<li>
+					<a href="http://github.com/garena"><i class="fa fa-github"></i> GitHub</a>
+				</li>
+			</ul><!-- /.dl-submenu -->
+		</li>
+		<li>
+			<a href="#">Posts</a>
+			<ul class="dl-submenu">
+				<li><a href="/posts/">All Posts</a></li>
+				<li><a href="/categories/">All Categories</a></li>
+			</ul>
+		</li>
+		
+	</ul><!-- /.dl-menu -->
+</nav><!-- /.dl-menuwrapper -->
+
+
+
+
+<div id="main" role="main">
+  <article class="hentry">
+    <header class="header-title">
+      <div class="header-title-wrap">
+        
+          <h1 class="entry-title"><a href="/blog/2015/10/15/memory-leak-caused-by-drawable-in-gingerbread/" rel="bookmark" title="Memory Leak caused by Drawable in Gingerbread">Memory Leak caused by Drawable in Gingerbread</a></h1>
+        
+        <h2>October 15, 2015</h2>
+      </div><!-- /.header-title-wrap -->
+    </header>
+    <div class="entry-content">
+      <p>In the previous <a href="/blog/2014/09/10/android-memory-leaks/">post</a>, we have briefly introduced memory leak in Android. Memory leak is one of the most important issues, we need to pay attention to during Android development. It may happen when we are unaware of it. In this post, we would like to share a scenario of memory leak in Gingerbread, which is diffcult to notice and observe.</p>
+
+<h2>Scenario</h2>
+
+<p>Firstly, let&rsquo;s take a look at a simple example:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">SecondActivity</span> <span class="kd">extends</span> <span class="n">Activity</span> <span class="o">{</span>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_second</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">Drawable</span> <span class="n">drawable</span> <span class="o">=</span> <span class="n">DrawableLruCache</span><span class="o">.</span><span class="na">getInstance</span><span class="o">()</span>
+</span><span class='line'>                <span class="o">.</span><span class="na">getDrawable</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">drawable</span><span class="o">.</span><span class="na">android_logo</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">ImageView</span> <span class="n">imageView</span> <span class="o">=</span> <span class="o">(</span><span class="n">ImageView</span><span class="o">)</span> <span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">image_view</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">imageView</span><span class="o">.</span><span class="na">setImageDrawable</span><span class="o">(</span><span class="n">drawable</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This piece of code is very simple. In an Activity, we would like to get a Drawable from a LRU cache, and then show the Drawable in a ImageView inside the Activity. Could you figure out anything wrong with this piece of code?</p>
+
+<p>Actually, this piece of code would cause memory leak in Gingerbread devices. When the Activity is destroyed, the LRU cache would likely continue to keep a strong reference of the Drawable, and the Drawable would still keep a strong reference of the View. Therefore, the whole Activity, as well as everything inside the Activity would be memory leaked.</p>
+
+<h2>Reason</h2>
+
+<p>The memory leak is caused by a small “bug” in the design of the Drawable object in Gingerbread.</p>
+
+<p>In Android, all the Views implement the <code>Drawable.Callback</code> interface. This interface is required for the Views to support animated Drawable. Whenever we need to display the Drawable in the View, for instance when we calling <code>setImageDrawable(Drawable drawable)</code> in a ImageView, Android would set the view as the callback client of the Drawable, in order to allow the View to support animation for the Drawable. You may figure out the detail implementation of the method from the source code of Android <a href="http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/4.2.1_r1.2/android/widget/ImageView.java#ImageView.setImageDrawable%28android.graphics.drawable.Drawable%29">here</a>.</p>
+
+<p>However, according to the <a href="http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/2.3.7_r1/android/graphics/drawable/Drawable.java#Drawable.setCallback%28android.graphics.drawable.Drawable.Callback%29">source code</a> of the Drawable, the Callback of the Drawable is passed as a strong reference in Gingerbread shown below:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">final</span> <span class="kt">void</span>  <span class="nf">setCallback</span><span class="o">(</span><span class="n">Callback</span> <span class="n">cb</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">mCallback</span> <span class="o">=</span> <span class="n">cb</span><span class="o">;</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That means, whenever we want to display the Drawable to a View, the Drawable would keep a strong reference of the View. Therefore, even after the Activity or View is destroyed, the Drawable would still keep a strong reference to the View, which may cause memory leak.</p>
+
+<p>You may think it is the LRU cache causes the memory leak. However, even if we do not use the LRU cache, this memory leak may still happen easily. The reason is that Android does have some kind of recycling manager with Drawable component. Therefore, when we get the Drawable with the same resource ID at different places, it is very common that Android would return the same instance of Drawable in order to optimize the usage of the memory.</p>
+
+<p>In other words, even there is no LRU cache, the same Drawable may still be used by other components such as another ImageView in another Activity, as long as the other ImageView needs to show the same Drawable with the same resource ID. If the other ImageView exists in the memory, it would keep a strong reference of the Drawable. Consequently, the Drawable would keep a strong reference of the View and will cause the same memory leak.</p>
+
+<h2>Solution</h2>
+
+<p>In order to solve this kind of memory leak, what we need to do is to manually set the Callback to be <code>null</code> when <code>onDestory()</code> is called in the Activity, or when <code>onDetachedFromWindow()</code> is called for the specific View. The source code we used to unbind the Drawable from the root view of the Activity is shown below:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">unbindDrawables</span><span class="o">(</span><span class="n">View</span> <span class="n">view</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="o">(</span><span class="n">view</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="k">if</span> <span class="o">(</span><span class="n">view</span><span class="o">.</span><span class="na">getBackground</span><span class="o">()</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">view</span><span class="o">.</span><span class="na">getBackground</span><span class="o">().</span><span class="na">setCallback</span><span class="o">(</span><span class="kc">null</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="k">if</span> <span class="o">(</span><span class="n">view</span> <span class="k">instanceof</span> <span class="n">ImageView</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">ImageView</span> <span class="n">imgView</span> <span class="o">=</span> <span class="o">(</span><span class="n">ImageView</span><span class="o">)</span> <span class="n">view</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">imgView</span><span class="o">.</span><span class="na">getDrawable</span><span class="o">()</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">Drawable</span> <span class="n">b</span> <span class="o">=</span> <span class="n">imgView</span><span class="o">.</span><span class="na">getDrawable</span><span class="o">();</span>
+</span><span class='line'>            <span class="n">b</span><span class="o">.</span><span class="na">setCallback</span><span class="o">(</span><span class="kc">null</span><span class="o">);</span>
+</span><span class='line'>            <span class="n">imgView</span><span class="o">.</span><span class="na">setImageDrawable</span><span class="o">(</span><span class="kc">null</span><span class="o">);</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">view</span> <span class="k">instanceof</span> <span class="n">ViewGroup</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="o">((</span><span class="n">ViewGroup</span><span class="o">)</span> <span class="n">view</span><span class="o">).</span><span class="na">getChildCount</span><span class="o">();</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">unbindDrawables</span><span class="o">(((</span><span class="n">ViewGroup</span><span class="o">)</span> <span class="n">view</span><span class="o">).</span><span class="na">getChildAt</span><span class="o">(</span><span class="n">i</span><span class="o">));</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">((</span><span class="n">view</span> <span class="k">instanceof</span> <span class="n">AdapterView</span><span class="o">&lt;?&gt;))</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">AdapterView</span><span class="o">&lt;?&gt;</span> <span class="n">adapterView</span> <span class="o">=</span> <span class="o">(</span><span class="n">AdapterView</span><span class="o">&lt;?&gt;)</span> <span class="n">view</span><span class="o">;</span>
+</span><span class='line'>                <span class="n">adapterView</span><span class="o">.</span><span class="na">setAdapter</span><span class="o">(</span><span class="kc">null</span><span class="o">);</span>
+</span><span class='line'>            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+</span><span class='line'>                <span class="o">((</span><span class="n">ViewGroup</span><span class="o">)</span> <span class="n">view</span><span class="o">).</span><span class="na">removeAllViews</span><span class="o">();</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>One more thing need to mention is that, this issue has already fixed in the Android Ice Cream Sandwich and above. In the
+newer version of Android, the Callback would be passed as a <code>WeakReference</code> according to the source
+code <a href="http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/4.2.1_r1.2/android/graphics/drawable/Drawable.java#Drawable.setCallback%28android.graphics.drawable.Drawable.Callback%29">here</a>. Hence, if you are no longer supporting Gingerbread, you don’t need to care about this issue.</p>
+
+      <footer class="entry-meta">
+        <span class="entry-tags"></span>
+        <span><a href="/blog/2015/10/15/memory-leak-caused-by-drawable-in-gingerbread/" rel="bookmark" title="Memory Leak caused by Drawable in Gingerbread">Memory Leak caused by Drawable in Gingerbread</a> was published on <span class="entry-date date published updated"><time datetime="2015-10-15T00:34:00+08:00">October 15, 2015</time></span></span>
+        
+        <span class="author vcard"><span class="fn"><a href="/" title="About "></a></span></span>
+        
+      </footer>
+    </div><!-- /.entry-content -->
+    
+      <div class="read-more">
+        
+          <div class="read-more-header">
+            <a href="/blog/2015/10/13/hello-marshmallow-runtime-runtime-permission/" class="btn">Read More</a>
+          </div><!-- /.read-more-header -->
+          <div class="read-more-content">
+            <h3><a href="/blog/2015/10/13/hello-marshmallow-runtime-runtime-permission/" title="Hello Marshmallow - Runtime Permission">Hello Marshmallow - Runtime Permission</a></h3>
+            <p>We never care about new release of Android operating system. Three reasons. Firstly, there were hardly any broken changes and the new &hellip;&hellip; <a href="/blog/2015/10/13/hello-marshmallow-runtime-runtime-permission/"> Continue reading</a></p>
+          </div><!-- /.read-more-content -->
+        
+        <div class="read-more-list">
+          
+            <div class="list-item">
+              <h4><a href="/blog/2015/05/24/a-shot-of-espresso/" title="A Shot of Espresso">A Shot of Espresso</a></h4>
+              <span>Published on May 24, 2015</span>
+            </div><!-- /.list-item -->
+          
+            <div class="list-item">
+              <h4><a href="/blog/2015/05/19/powered-by-dagger-2/" title="Powered by Dagger 2">Powered by Dagger 2</a></h4>
+              <span>Published on May 19, 2015</span>
+            </div><!-- /.list-item -->
+          
+        </div><!-- /.read-more-list -->
+      </div><!-- /.read-more -->
+    
+    <section id="disqus_thread"></section><!-- /#disqus_thread -->
+  </article>
+</div><!-- /#main -->
+
+<div class="footer-wrapper">
+  <footer role="contentinfo">
+    <span>&copy; 2015 Garena Labs. Powered by <a href="http://octopress.org">Octopress</a> using the <a href="https://github.com/Z1MM32M4N/hpstr-theme/">HPSTR Theme for Octopress</a>.</span>
+
+  </footer>
+</div><!-- /.footer-wrapper -->
+
+
+	        
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script>window.jQuery || document.write('<script src="/javascripts/vendor/jquery-1.9.1.min.js"><\/script>')</script>
+<!--
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+-->
+<script src="/javascripts/scripts.min.js"></script>
+
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-53779472-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'garenalabs';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://garena.github.io/blog/2015/10/15/memory-leak-caused-by-drawable-in-gingerbread/';
+        var disqus_url = 'http://garena.github.io/blog/2015/10/15/memory-leak-caused-by-drawable-in-gingerbread/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+	        
+
+</body>
+</html>

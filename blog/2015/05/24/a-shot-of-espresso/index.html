@@ -1,0 +1,756 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+
+<head>
+
+
+<meta charset="utf-8">
+<meta http-equiv="cleartype" content="on">
+
+<title>A Shot of Espresso - Engineering @ garena</title>
+<meta name="author" content="Garena Labs">
+
+
+
+
+<meta name="description" content="A Tech Blog by Garena Labs">
+
+<meta name="keywords" content="android ">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Twitter Cards -->
+
+  
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:image" content"">
+  
+  <meta name="twitter:title" content="A Shot of Espresso">
+  <meta name="twitter:description" content="A Tech Blog by Garena Labs">
+  <meta name="twitter:creator" content="@Garena_SG">
+
+
+<!-- Open Graph -->
+<meta property="og:local" content="en_US">
+<meta property="og:type" content="article">
+<meta property="og:url" content="http://garena.github.io/blog/2015/05/24/a-shot-of-espresso">
+<meta property="og:title" content="A Shot of Espresso">
+<meta property="og:description" content="A Tech Blog by Garena Labs">
+
+  <meta property="og:image" content="">
+
+<meta property="og:site_name" content="Engineering @ garena">
+
+<link rel="canonical" href="http://garena.github.io/blog/2015/05/24/a-shot-of-espresso">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+<link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+<link href="/atom.xml" rel="alternate" title="Engineering @ garena" type="application/atom+xml">
+
+<script src="/javascripts/modernizr.min.js"></script>
+
+
+
+<!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+</head>
+
+<body id="post" >
+
+<!--[if lt IE 9]><div class="upgrade"><strong><a href="http://whatbrowser.org/">Your browser is quite old!</strong> Why not upgrade to a different browser to better enjoy this site?</a></div><![endif]-->
+<nav id="dl-menu" class="dl-menuwrapper" role="navigation">
+	<button class="dl-trigger">Open Menu</button>
+	<ul class="dl-menu">
+		<li><a href="/">Home</a></li>
+		<li><a href="/career">Career</a></li>
+		<li>
+			<a href="#">About</a>
+			<ul class="dl-submenu">
+				<li>
+					<img src="" alt="Garena Labs photo" class="author-photo">
+					<h4>Garena Labs</h4>
+					<p></p>
+				</li>
+				<li><a href="//www.zimmerman.io">Learn More</a></li>
+				
+				<li>
+					<a href="http://twitter.com/Garena_SG"><i class="fa fa-twitter"></i> Twitter</a>
+				</li>
+				
+				<li>
+					<a href="http://github.com/garena"><i class="fa fa-github"></i> GitHub</a>
+				</li>
+			</ul><!-- /.dl-submenu -->
+		</li>
+		<li>
+			<a href="#">Posts</a>
+			<ul class="dl-submenu">
+				<li><a href="/posts/">All Posts</a></li>
+				<li><a href="/categories/">All Categories</a></li>
+			</ul>
+		</li>
+		
+	</ul><!-- /.dl-menu -->
+</nav><!-- /.dl-menuwrapper -->
+
+
+
+
+<div id="main" role="main">
+  <article class="hentry">
+    <header class="header-title">
+      <div class="header-title-wrap">
+        
+          <h1 class="entry-title"><a href="/blog/2015/05/24/a-shot-of-espresso/" rel="bookmark" title="A Shot of Espresso">A Shot of Espresso</a></h1>
+        
+        <h2>May 24, 2015</h2>
+      </div><!-- /.header-title-wrap -->
+    </header>
+    <div class="entry-content">
+      <p>The days without testing in Garena is long gone.  Our QA team has done a great job to provide continuous integration for BeeTalk and now it is the time for the engineering team to catch up.  So we set time aside to explore the continuous integration for our new Project.  Apparently Google has promoted <a href="https://code.google.com/p/android-test-kit/wiki/Espresso">Espresso</a> as the official framework for Android integration testing and it becomes our choice without second thought.</p>
+
+<h2>Configuration</h2>
+
+<p>We found Espresso easy to set up and the integration is just smooth. Add the dependency to <code>build.gradle</code></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">androidTestCompile</span><span class="o">(</span><span class="err">&#39;</span><span class="n">com</span><span class="o">.</span><span class="na">android</span><span class="o">.</span><span class="na">support</span><span class="o">.</span><span class="na">test</span><span class="o">.</span><span class="na">espresso</span><span class="o">:</span><span class="n">espresso</span><span class="o">-</span><span class="nl">core:</span><span class="mf">2.1</span><span class="err">&#39;</span><span class="o">){</span>
+</span><span class='line'>    <span class="n">exclude</span> <span class="nl">group:</span> <span class="err">&#39;</span><span class="n">javax</span><span class="o">.</span><span class="na">inject</span><span class="err">&#39;</span> <span class="c1">//support 2.3</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'><span class="n">androidTestCompile</span> <span class="err">&#39;</span><span class="n">com</span><span class="o">.</span><span class="na">android</span><span class="o">.</span><span class="na">support</span><span class="o">.</span><span class="na">test</span><span class="o">.</span><span class="na">espresso</span><span class="o">:</span><span class="n">espresso</span><span class="o">-</span><span class="nl">intents:</span><span class="mf">2.1</span><span class="err">&#39;</span>
+</span><span class='line'><span class="n">androidTestCompile</span> <span class="err">&#39;</span><span class="n">com</span><span class="o">.</span><span class="na">android</span><span class="o">.</span><span class="na">support</span><span class="o">.</span><span class="na">test</span><span class="o">.</span><span class="na">espresso</span><span class="o">:</span><span class="n">espresso</span><span class="o">-</span><span class="nl">contrib:</span><span class="mf">2.1</span><span class="err">&#39;</span>
+</span><span class='line'><span class="n">androidTestCompile</span> <span class="err">&#39;</span><span class="n">com</span><span class="o">.</span><span class="na">android</span><span class="o">.</span><span class="na">support</span><span class="o">.</span><span class="na">test</span><span class="o">:</span><span class="nl">runner:</span><span class="mf">0.2</span><span class="err">&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For Android studio, simply create a new test configuration and it is all set.</p>
+
+<p><img src="/images/espresso.png" alt="Espresso Configuration" /></p>
+
+<p>Of course, you shall put all your test cases in <code>/src/androidTest</code>.</p>
+
+<h2>Write test cases</h2>
+
+<p>We are interested to write test cases to cover basic user operation, including login, registration and purchase, in which many network requests are involved.  We aim to achieve three things:</p>
+
+<ul>
+<li>Robust:  test cases should always work</li>
+<li>Lightweight:  zero impact or trivial modification to production code</li>
+<li>Efficient:  lower down the cost to run the test cases</li>
+</ul>
+
+
+<h4>Robustness</h4>
+
+<p>Our test cases are designed to cover the workflow with expected execution in mind.  Since we cannot run the logic without networking interaction, we decide to mock every single network request via our request wrapper.  For example, <code>TokenLoginRequest</code> is our class wrapper to fire a login request.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">TokenLoginRequest</span> <span class="kd">extends</span> <span class="n">EndpointHttpRequest</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">String</span> <span class="n">mMobileNumber</span><span class="o">,</span> <span class="n">mToken</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="nf">TokenLoginRequest</span><span class="o">(</span><span class="n">OkHttpClient</span> <span class="n">httpClient</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">(</span><span class="n">httpClient</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">setLoginInfo</span><span class="o">(</span><span class="n">String</span> <span class="n">mobile</span><span class="o">,</span> <span class="n">String</span> <span class="n">token</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">mMobileNumber</span> <span class="o">=</span> <span class="n">mobile</span><span class="o">;</span>
+</span><span class='line'>        <span class="n">mToken</span> <span class="o">=</span> <span class="n">token</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="n">RequestBody</span> <span class="nf">body</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">FormEncodingBuilder</span><span class="o">().</span>
+</span><span class='line'>                <span class="n">add</span><span class="o">(</span><span class="s">&quot;token&quot;</span><span class="o">,</span> <span class="n">mToken</span><span class="o">).</span>
+</span><span class='line'>                <span class="n">add</span><span class="o">(</span><span class="s">&quot;mobile&quot;</span><span class="o">,</span> <span class="n">mMobileNumber</span><span class="o">).</span>
+</span><span class='line'>                <span class="n">build</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="n">String</span> <span class="nf">getServiceName</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="s">&quot;services2/login/token/&quot;</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To mock it, simply override the implementation</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MockTokenLoginRequest</span> <span class="kd">extends</span> <span class="n">TokenLoginRequest</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">Gson</span> <span class="n">gson</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Gson</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="nf">MockTokenLoginRequest</span><span class="o">(</span><span class="n">OkHttpClient</span> <span class="n">httpClient</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">(</span><span class="n">httpClient</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="n">Response</span> <span class="nf">execute</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">CommonResponse</span> <span class="n">response</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CommonResponse</span><span class="o">();</span>
+</span><span class='line'>        <span class="n">response</span><span class="o">.</span><span class="na">errorCode</span> <span class="o">=</span> <span class="n">NetworkConst</span><span class="o">.</span><span class="na">OK</span><span class="o">;</span>
+</span><span class='line'>        <span class="n">response</span><span class="o">.</span><span class="na">errorMessage</span> <span class="o">=</span> <span class="s">&quot;ok&quot;</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">ResponseFactory</span><span class="o">.</span><span class="na">getJsonResponseBuilder</span><span class="o">(</span><span class="n">gson</span><span class="o">.</span><span class="na">toJson</span><span class="o">(</span><span class="n">response</span><span class="o">),</span> <span class="n">postRequest</span><span class="o">());</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With mocked API request, there is no way to fail a case due to unstable WIFI network. How to put the mock class in action? There are two ways, either via a factory class or perform injection. We utilize Dagger and define test modules to replace the default implementation</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Test</span>
+</span><span class='line'><span class="kd">public</span> <span class="kt">void</span> <span class="nf">loginViaOtp</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Intent</span> <span class="n">intent</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Intent</span><span class="o">();</span>
+</span><span class='line'>    <span class="n">intent</span><span class="o">.</span><span class="na">putExtra</span><span class="o">(</span><span class="s">&quot;number_ui&quot;</span><span class="o">,</span> <span class="n">MockOTPValidationRequest</span><span class="o">.</span><span class="na">STANDARD_LOGIN</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">intent</span><span class="o">.</span><span class="na">putExtra</span><span class="o">(</span><span class="s">&quot;number_e164&quot;</span><span class="o">,</span> <span class="n">MockOTPValidationRequest</span><span class="o">.</span><span class="na">STANDARD_LOGIN</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">mActivityRule</span><span class="o">.</span><span class="na">launchActivity</span><span class="o">(</span><span class="n">intent</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">//input the sms</span>
+</span><span class='line'>    <span class="n">onView</span><span class="o">(</span><span class="n">withId</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">cp_sms_code_input</span><span class="o">)).</span><span class="na">perform</span><span class="o">(</span><span class="n">typeText</span><span class="o">(</span><span class="s">&quot;111111&quot;</span><span class="o">));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">//inject the fake sms authentication</span>
+</span><span class='line'>    <span class="n">LoginSMSAuthActivity</span> <span class="n">smsAuthActivity</span> <span class="o">=</span> <span class="o">(</span><span class="n">LoginSMSAuthActivity</span><span class="o">)</span> <span class="n">getActivityInstance</span><span class="o">();</span>
+</span><span class='line'>    <span class="n">mockModule</span><span class="o">.</span><span class="na">inject</span><span class="o">(</span><span class="n">smsAuthActivity</span><span class="o">.</span><span class="na">presenter</span><span class="o">());</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">//click the button</span>
+</span><span class='line'>    <span class="n">onView</span><span class="o">(</span><span class="n">withId</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">cp_sms_confirm_btn</span><span class="o">)).</span><span class="na">perform</span><span class="o">(</span><span class="n">click</span><span class="o">());</span>
+</span><span class='line'>    <span class="c1">//....</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You may not have the chance to perform the injection so easily due to complicated hierarchy but it is essential to keep the footprint small. In test cases, I really don&rsquo;t mind playing dirty tricks like reflection.</p>
+
+<h3>Lightweight</h3>
+
+<p>Test cases cannot pose any issue to the production code.  Gradle has offered great flexibility on how to separate debug code and production code, so does the case of testing.</p>
+
+<h4>Code Strucure</h4>
+
+<p><code>/src/androidTest</code></p>
+
+<ul>
+<li>hold all test cases</li>
+<li>supporting library</li>
+</ul>
+
+
+<p><code>/src/debug</code></p>
+
+<ul>
+<li>mock classes</li>
+</ul>
+
+
+<p><code>/src/release</code></p>
+
+<ul>
+<li>no mocking classes</li>
+</ul>
+
+
+<h4>Injection</h4>
+
+<p>As stated above, we provide mock implementation via injection but sometimes it is not that straight forward. In those case in which you have to inject the fake implementation at the early stage of the activity life cycle, we simply override the activity and inject as early as possible. In other cases, you may not want the navigation happen because you cannot inject an activity which does not exist.  The code snippet below shows how we handle both cases.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">TestLoginActivity</span> <span class="kd">extends</span> <span class="n">LoginActivity</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">ActivityScreenSwitcher</span> <span class="n">mScreenSwitcher</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreateComponent</span><span class="o">(</span><span class="n">AppComponent</span> <span class="n">appComponent</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="c1">//use the real app module</span>
+</span><span class='line'>        <span class="n">AppModule</span> <span class="n">module</span> <span class="o">=</span> <span class="k">new</span> <span class="n">AppModule</span><span class="o">(</span><span class="n">CyberpayAdminApp</span><span class="o">.</span><span class="na">getApp</span><span class="o">());</span>
+</span><span class='line'>        <span class="n">DebugAppUIModule</span> <span class="n">uiModule</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DebugAppUIModule</span><span class="o">();</span>
+</span><span class='line'>        <span class="c1">//get the real login session</span>
+</span><span class='line'>        <span class="n">UserModule</span> <span class="n">userModule</span> <span class="o">=</span> <span class="k">new</span> <span class="n">UserModule</span><span class="o">(</span><span class="n">CyberpayAdminApp</span><span class="o">.</span><span class="na">getApp</span><span class="o">().</span><span class="na">component</span><span class="o">().</span><span class="na">getLoginSession</span><span class="o">());</span>
+</span><span class='line'>        <span class="c1">//customized app component</span>
+</span><span class='line'>        <span class="n">DebugAppComponent</span> <span class="n">debugAppComponent</span> <span class="o">=</span> <span class="n">DaggerDebugAppComponent</span><span class="o">.</span><span class="na">builder</span><span class="o">().</span><span class="na">appModule</span><span class="o">(</span><span class="n">module</span><span class="o">).</span><span class="na">userModule</span><span class="o">(</span><span class="n">userModule</span><span class="o">)</span>
+</span><span class='line'>                <span class="o">.</span><span class="na">debugAppUIModule</span><span class="o">(</span><span class="n">uiModule</span><span class="o">).</span><span class="na">build</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">mScreenSwitcher</span> <span class="o">=</span> <span class="n">debugAppComponent</span><span class="o">.</span><span class="na">activityScreenSwitcher</span><span class="o">();</span>
+</span><span class='line'>        <span class="n">mActivityComponent</span> <span class="o">=</span> <span class="n">DaggerMockRoutineComponent</span><span class="o">.</span><span class="na">builder</span><span class="o">().</span><span class="na">appComponent</span><span class="o">(</span><span class="n">debugAppComponent</span><span class="o">).</span>
+</span><span class='line'>                        <span class="n">mockRoutineModule</span><span class="o">(</span><span class="k">new</span> <span class="n">MockRoutineModule</span><span class="o">()).</span><span class="na">build</span><span class="o">();</span>
+</span><span class='line'>        <span class="c1">//perform the injection with mock implementation</span>
+</span><span class='line'>        <span class="n">mActivityComponent</span><span class="o">.</span><span class="na">inject</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="c1">//......</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>mActivitiyComponent</code> will be used to inject everything inside the activity, i.e. views, presenters and we provide <code>DebugAppUIModule</code> to intercept the intent for navigation and save for verification. In the test cases, you should invoke <code>TestLoginActivity</code> instead of <code>LoginActivity</code>.  At the first sight it looks scary, because even new <strong>hacked</strong> activities are introduced. Well, there is no chance to have them in the production because you shall have everything under the flavor of <code>debug</code>.</p>
+
+<h4>Async Trick</h4>
+
+<p>People always wonder how to test something asynchronous from the user perspective, i.e fire a network request and the activity moves to the next step. Espresso supports <code>AsyncTask</code> in its core implementation and offers flexibility to other async/task management framework. <a href="https://github.com/BoltsFramework/Bolts-Android">Bolts</a> is our choice of task management and our code is structured like this</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">mContinueBtn</span><span class="o">.</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="k">new</span> <span class="n">View</span><span class="o">.</span><span class="na">OnClickListener</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>                <span class="nd">@Override</span>
+</span><span class='line'>                <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onClick</span><span class="o">(</span><span class="n">View</span> <span class="n">v</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">getView</span><span class="o">().</span><span class="na">showLoading</span><span class="o">();</span>
+</span><span class='line'>                    <span class="n">mLoginRequest</span><span class="o">.</span><span class="na">setNumber</span><span class="o">(</span><span class="n">input</span><span class="o">);</span>
+</span><span class='line'>                    <span class="n">Task</span><span class="o">.</span><span class="na">callInBackground</span><span class="o">(</span><span class="k">new</span> <span class="n">Callable</span><span class="o">&lt;</span><span class="n">LoginInfo</span><span class="o">&gt;()</span> <span class="o">{</span>
+</span><span class='line'>                          <span class="nd">@Override</span>
+</span><span class='line'>                          <span class="kd">public</span> <span class="n">LoginInfo</span> <span class="nf">call</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+</span><span class='line'>                                <span class="c1">//make the request</span>
+</span><span class='line'>                                <span class="k">return</span> <span class="n">mLoginRequest</span><span class="o">.</span><span class="na">getResponse</span><span class="o">();</span>
+</span><span class='line'>                          <span class="o">}</span>
+</span><span class='line'>                    <span class="o">}).</span><span class="na">continueWith</span><span class="o">(</span><span class="k">new</span> <span class="n">Continuation</span><span class="o">&lt;</span><span class="n">LoginInfo</span><span class="o">,</span> <span class="n">Void</span><span class="o">&gt;()</span> <span class="o">{</span>
+</span><span class='line'>                          <span class="nd">@Override</span>
+</span><span class='line'>                          <span class="kd">public</span> <span class="n">Void</span> <span class="nf">then</span><span class="o">(</span><span class="n">Task</span><span class="o">&lt;</span><span class="n">LoginInfo</span><span class="o">&gt;</span> <span class="n">task</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+</span><span class='line'>                                 <span class="n">getView</span><span class="o">().</span><span class="na">loadingView</span><span class="o">.</span><span class="na">setRefreshing</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+</span><span class='line'>                                 <span class="k">if</span> <span class="o">(</span><span class="n">task</span><span class="o">.</span><span class="na">isFaulted</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>                                     <span class="n">activity</span><span class="o">.</span><span class="na">resolveError</span><span class="o">(</span><span class="n">task</span><span class="o">.</span><span class="na">getError</span><span class="o">());</span>
+</span><span class='line'>                               <span class="o">}</span>
+</span><span class='line'>                                 <span class="c1">//perform action </span>
+</span><span class='line'>                                 <span class="c1">//......</span>
+</span><span class='line'>                                <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>                    <span class="o">},</span> <span class="n">Task</span><span class="o">.</span><span class="na">UI_THREAD_EXECUTOR</span><span class="o">));</span>
+</span><span class='line'>          
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>We follow the <a href="https://code.google.com/p/android-test-kit/wiki/EspressoSamples#Using_registerIdlingResource_to_synchronize_with_custom_resource">recommendation from Google</a> but later we found that <a href="http://developer.android.com/reference/android/support/test/espresso/IdlingResource.html">IdlingResource</a> is poorly documented.</p>
+
+<blockquote><p><code>isIdleNow()</code> returns true if resource is currently idle. Espresso will always call this method from the main thread, therefore it should be non-blocking and return immediately.</p></blockquote>
+
+<p>You may ask why I should care about this. Well, here is the core idea behind this helper class. The system will check on it time by time after registration. Assume you have a state variable <code>mIsBusy</code> and <code>isIdleNow</code> will return the value of <code>mIsBusy</code>, you should always modify the value <code>mIsBusy</code> from the main thread, otherwise there is no guarantee that the test runner will stop before the asynchronous call completed.  Ideally, you shall have test case like this</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Test</span>
+</span><span class='line'><span class="kd">public</span> <span class="kt">void</span> <span class="nf">loginTest</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">//attempt login </span>
+</span><span class='line'>    <span class="n">onView</span><span class="o">(</span><span class="n">withId</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">login_button</span><span class="o">)).</span><span class="na">perform</span><span class="o">(</span><span class="n">click</span><span class="o">());</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">//FIRE NETWORK REQUEST......</span>
+</span><span class='line'>    <span class="c1">//WAIT UNTIL THE SERVER RETURNS THE RESULT</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">//verify which activity it is now</span>
+</span><span class='line'>    <span class="n">assertTrue</span><span class="o">(</span><span class="n">getActivityInstance</span><span class="o">()</span> <span class="k">instanceof</span> <span class="n">HomeActivity</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You cannot change the <code>mIsBusy</code> before you click the login button, otherwise nobody will trigger the login action. You cannot change the value after the login button because you don&rsquo;t know when the network response will modify the value.  It seems to be a deadlock and the solution is to change the value right after the user clicks the button.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">mContinueBtn</span><span class="o">.</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="k">new</span> <span class="n">View</span><span class="o">.</span><span class="na">OnClickListener</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>                <span class="nd">@Override</span>
+</span><span class='line'>                <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onClick</span><span class="o">(</span><span class="n">View</span> <span class="n">v</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>                    <span class="c1">//MODIFY THE mIsBusy FROM MAIN THREAD</span>
+</span><span class='line'>                    <span class="n">mIsBusy</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>                   <span class="c1">//fire network request</span>
+</span><span class='line'>                <span class="o">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>A static variable cannot serves well for multiple network requests in sequence (they cannot decide when to flip the value). Additionally the production code should be unaware of <code>IdlingResource</code> presence.  Thus we comes with a helper class in <code>main</code> sources.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">NetworkStatus</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="kd">static</span> <span class="kt">long</span> <span class="n">mStartTime</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="kd">static</span> <span class="kt">int</span> <span class="n">mCount</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cm">/**</span>
+</span><span class='line'><span class="cm">     * Mark a new checkpoint of background requests, must call via UI thread.</span>
+</span><span class='line'><span class="cm">     */</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">onNetworkRequestStart</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(!</span><span class="n">BuildConfig</span><span class="o">.</span><span class="na">DEBUG</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">return</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="kd">synchronized</span> <span class="o">(</span><span class="n">NetworkStatus</span><span class="o">.</span><span class="na">class</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">mCount</span><span class="o">++;</span>
+</span><span class='line'>            <span class="n">mStartTime</span> <span class="o">=</span> <span class="n">BBTimeHelper</span><span class="o">.</span><span class="na">millNow</span><span class="o">();</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cm">/**</span>
+</span><span class='line'><span class="cm">     * Mark a new checkpoint of background requests, recommend to call via UI thread but not necessary to do so</span>
+</span><span class='line'><span class="cm">     */</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">onNetworkRequestEnd</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(!</span><span class="n">BuildConfig</span><span class="o">.</span><span class="na">DEBUG</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">return</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="kd">synchronized</span> <span class="o">(</span><span class="n">NetworkStatus</span><span class="o">.</span><span class="na">class</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">mCount</span><span class="o">--;</span>
+</span><span class='line'>            <span class="n">BBAppLogger</span><span class="o">.</span><span class="na">i</span><span class="o">(</span><span class="s">&quot;execution time %d&quot;</span><span class="o">,</span> <span class="n">BBTimeHelper</span><span class="o">.</span><span class="na">millNow</span><span class="o">()</span> <span class="o">-</span> <span class="n">mStartTime</span><span class="o">);</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cm">/**</span>
+</span><span class='line'><span class="cm">     * Accessed via UI thread only</span>
+</span><span class='line'><span class="cm">     *</span>
+</span><span class='line'><span class="cm">     * @return true if no network task is ongoing</span>
+</span><span class='line'><span class="cm">     */</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">boolean</span> <span class="nf">isIdle</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">mCount</span> <span class="o">==</span> <span class="mi">0</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>and subclass the <code>IdlingResource</code> in <code>androidTest</code></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">NetworkIdlingResource</span> <span class="kd">implements</span> <span class="n">IdlingResource</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="n">String</span> <span class="nf">getName</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="s">&quot;network_mock&quot;</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">isIdleNow</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kt">boolean</span> <span class="n">idle</span> <span class="o">=</span> <span class="n">NetworkStatus</span><span class="o">.</span><span class="na">isIdle</span><span class="o">();</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">idle</span> <span class="o">&amp;&amp;</span> <span class="n">mCallback</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">mCallback</span><span class="o">.</span><span class="na">onTransitionToIdle</span><span class="o">();</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">idle</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">ResourceCallback</span> <span class="n">mCallback</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">registerIdleTransitionCallback</span><span class="o">(</span><span class="n">ResourceCallback</span> <span class="n">resourceCallback</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">mCallback</span> <span class="o">=</span> <span class="n">resourceCallback</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Thus the production code should call <code>NetworkStatus.onNetworkRequestStart</code> from main thread before firing a network request and call <code>NetworkStatus.onNetworkRequestEnd</code> from main thread after a network requests completes.  Trivial modification is made and goal accomplished.</p>
+
+<h3>Efficient</h3>
+
+<p>Android fragmentation scares people and many developers only test their application on physical devices. Ironically, most of bugs are caused by logic errors rather than device variance.  We choose Genymotion for continuous integration with <a href="https://jenkins-ci.org/">Jenkins</a>. Here is the setup</p>
+
+<ul>
+<li>Ubuntu 14.04 LTS on a lower end Dell laptop</li>
+<li>3 Genymotion instances (Android 4.3, 4.4, 5.1)</li>
+<li>Connect to Jenkins machine with direct cable</li>
+</ul>
+
+
+<p>Genymotion is much faster than physical devices and the three instance can fire concurrently. 63 tests can finish with 3 minutes.</p>
+
+<p><img src="/images/jenkins_espresso.png" alt="Espresso with Jenkins" /></p>
+
+<p>You can add as many VM or physical devices as you want and trigger the testing via</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='groovy'><span class='line'><span class="o">./</span><span class="n">gradlew</span> <span class="n">connectedAndroidTestDebug</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p> ## Conclusion
+Our journey with Espresso or continuous integration does not end here and we are working on a couple of things like</p>
+
+<ul>
+<li>write test cases against our server API</li>
+<li>apply espresso to test shared libraries</li>
+<li>test upon different flavors</li>
+</ul>
+
+
+      <footer class="entry-meta">
+        <span class="entry-tags"><a href="/categories/#android" title="Pages tagged android" class="tag">android</a></span>
+        <span><a href="/blog/2015/05/24/a-shot-of-espresso/" rel="bookmark" title="A Shot of Espresso">A Shot of Espresso</a> was published on <span class="entry-date date published updated"><time datetime="2015-05-24T11:37:22+08:00">May 24, 2015</time></span></span>
+        
+        <span class="author vcard"><span class="fn"><a href="/zhao-cong" title="About Zhao Cong">Zhao Cong</a></span></span>
+        
+      </footer>
+    </div><!-- /.entry-content -->
+    
+      <div class="read-more">
+        
+          <div class="read-more-header">
+            <a href="/blog/2015/10/15/memory-leak-caused-by-drawable-in-gingerbread/" class="btn">Read More</a>
+          </div><!-- /.read-more-header -->
+          <div class="read-more-content">
+            <h3><a href="/blog/2015/10/15/memory-leak-caused-by-drawable-in-gingerbread/" title="Memory Leak caused by Drawable in Gingerbread">Memory Leak caused by Drawable in Gingerbread</a></h3>
+            <p>In the previous [post](/blog/2014/09/10/android-memory-leaks/), we have briefly introduced memory leak in Android. Memory leak is one of &hellip;&hellip; <a href="/blog/2015/10/15/memory-leak-caused-by-drawable-in-gingerbread/"> Continue reading</a></p>
+          </div><!-- /.read-more-content -->
+        
+        <div class="read-more-list">
+          
+            <div class="list-item">
+              <h4><a href="/blog/2015/10/13/hello-marshmallow-runtime-runtime-permission/" title="Hello Marshmallow - Runtime Permission">Hello Marshmallow - Runtime Permission</a></h4>
+              <span>Published on October 13, 2015</span>
+            </div><!-- /.list-item -->
+          
+            <div class="list-item">
+              <h4><a href="/blog/2015/05/19/powered-by-dagger-2/" title="Powered by Dagger 2">Powered by Dagger 2</a></h4>
+              <span>Published on May 19, 2015</span>
+            </div><!-- /.list-item -->
+          
+        </div><!-- /.read-more-list -->
+      </div><!-- /.read-more -->
+    
+    <section id="disqus_thread"></section><!-- /#disqus_thread -->
+  </article>
+</div><!-- /#main -->
+
+<div class="footer-wrapper">
+  <footer role="contentinfo">
+    <span>&copy; 2015 Garena Labs. Powered by <a href="http://octopress.org">Octopress</a> using the <a href="https://github.com/Z1MM32M4N/hpstr-theme/">HPSTR Theme for Octopress</a>.</span>
+
+  </footer>
+</div><!-- /.footer-wrapper -->
+
+
+	        
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script>window.jQuery || document.write('<script src="/javascripts/vendor/jquery-1.9.1.min.js"><\/script>')</script>
+<!--
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+-->
+<script src="/javascripts/scripts.min.js"></script>
+
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-53779472-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'garenalabs';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://garena.github.io/blog/2015/05/24/a-shot-of-espresso/';
+        var disqus_url = 'http://garena.github.io/blog/2015/05/24/a-shot-of-espresso/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+	        
+
+</body>
+</html>

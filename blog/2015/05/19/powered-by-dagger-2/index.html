@@ -1,0 +1,486 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+
+<head>
+
+
+<meta charset="utf-8">
+<meta http-equiv="cleartype" content="on">
+
+<title>Powered by Dagger 2 - Engineering @ garena</title>
+<meta name="author" content="Garena Labs">
+
+
+
+
+<meta name="description" content="A Tech Blog by Garena Labs">
+
+<meta name="keywords" content="android ">
+
+
+<!-- http://t.co/dKP3o1e -->
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Twitter Cards -->
+
+  
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:image" content"">
+  
+  <meta name="twitter:title" content="Powered by Dagger 2">
+  <meta name="twitter:description" content="A Tech Blog by Garena Labs">
+  <meta name="twitter:creator" content="@Garena_SG">
+
+
+<!-- Open Graph -->
+<meta property="og:local" content="en_US">
+<meta property="og:type" content="article">
+<meta property="og:url" content="http://garena.github.io/blog/2015/05/19/powered-by-dagger-2">
+<meta property="og:title" content="Powered by Dagger 2">
+<meta property="og:description" content="A Tech Blog by Garena Labs">
+
+  <meta property="og:image" content="">
+
+<meta property="og:site_name" content="Engineering @ garena">
+
+<link rel="canonical" href="http://garena.github.io/blog/2015/05/19/powered-by-dagger-2">
+<link href="/favicon.png" rel="icon">
+<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+<link href="//netdna.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+<link href="/atom.xml" rel="alternate" title="Engineering @ garena" type="application/atom+xml">
+
+<script src="/javascripts/modernizr.min.js"></script>
+
+
+
+<!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+
+</head>
+
+<body id="post" >
+
+<!--[if lt IE 9]><div class="upgrade"><strong><a href="http://whatbrowser.org/">Your browser is quite old!</strong> Why not upgrade to a different browser to better enjoy this site?</a></div><![endif]-->
+<nav id="dl-menu" class="dl-menuwrapper" role="navigation">
+	<button class="dl-trigger">Open Menu</button>
+	<ul class="dl-menu">
+		<li><a href="/">Home</a></li>
+		<li><a href="/career">Career</a></li>
+		<li>
+			<a href="#">About</a>
+			<ul class="dl-submenu">
+				<li>
+					<img src="" alt="Garena Labs photo" class="author-photo">
+					<h4>Garena Labs</h4>
+					<p></p>
+				</li>
+				<li><a href="//www.zimmerman.io">Learn More</a></li>
+				
+				<li>
+					<a href="http://twitter.com/Garena_SG"><i class="fa fa-twitter"></i> Twitter</a>
+				</li>
+				
+				<li>
+					<a href="http://github.com/garena"><i class="fa fa-github"></i> GitHub</a>
+				</li>
+			</ul><!-- /.dl-submenu -->
+		</li>
+		<li>
+			<a href="#">Posts</a>
+			<ul class="dl-submenu">
+				<li><a href="/posts/">All Posts</a></li>
+				<li><a href="/categories/">All Categories</a></li>
+			</ul>
+		</li>
+		
+	</ul><!-- /.dl-menu -->
+</nav><!-- /.dl-menuwrapper -->
+
+
+
+
+<div id="main" role="main">
+  <article class="hentry">
+    <header class="header-title">
+      <div class="header-title-wrap">
+        
+          <h1 class="entry-title"><a href="/blog/2015/05/19/powered-by-dagger-2/" rel="bookmark" title="Powered by Dagger 2">Powered by Dagger 2</a></h1>
+        
+        <h2>May 19, 2015</h2>
+      </div><!-- /.header-title-wrap -->
+    </header>
+    <div class="entry-content">
+      <p>There are a lots of buzz about Android architecture recently. We feel excited about the evolvement of Android development and decide to give a try for production. After a few trials and errors, we are settled with the combination of <a href="http://google.github.io/dagger/">Dagger 2</a> and <a href="https://code.google.com/p/android-test-kit/wiki/Espresso">Espresso</a>. We feel happy with it and would like to share our experience with Dagger 2 in this post.</p>
+
+<h2>Pros</h2>
+
+<p>We start with <a href="http://square.github.io/dagger/">Dagger 1</a> from Square and loves the concept. It is a brand new way for us to get rid of ugly singleton pattern and structure the code in an elegant manner.  Additionally, it fundamentally resolves the issues of dependency and acquiring resource is not an problem any more.</p>
+
+<p>Later we learn about the even awesome <code>Dagger 2</code>, it immediately catches our attention for those features we actually cares. The code generation avoids the tricks of reflection and fixed class naming, thus 100% friendly to proguard. Nevertheless, developers still have to decide how to structure the code. The great flexibility is prone to over engineering and eventually you will find a deadlock when attempting to run unit tests. Dependency injection brings the advantage of data mocking and we start with simple use case.</p>
+
+<h3>Dagger for Development</h3>
+
+<p>Assume you want to initiate a Http request after the user clicks a button. The code below shows how it works without dependency injection.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'>
+</span><span class='line'><span class="kd">private</span> <span class="n">LoginRequest</span> <span class="n">mRequest</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@onClick</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">login</span><span class="o">)</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">loginButtonOnClicked</span><span class="o">(){</span>
+</span><span class='line'>   <span class="n">Task</span><span class="o">.</span><span class="na">callInBackGround</span> <span class="o">{</span>
+</span><span class='line'>     <span class="n">Response</span> <span class="n">rp</span> <span class="o">=</span> <span class="n">mRequest</span><span class="o">.</span><span class="na">post</span><span class="o">()</span>
+</span><span class='line'> <span class="o">}.</span> <span class="n">onSuccess</span> <span class="o">{</span>
+</span><span class='line'>    <span class="c1">//Update the UI</span>
+</span><span class='line'> <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>It is very straight forward, but using the production server or testing server is slow and you may hit limited number of login per day etc. Dagger saves our lives by <code>Qualifier</code>. To start with, you define a qualifier to distinguish implementation for production and internal testing.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'>   <span class="nd">@Qualifier</span>
+</span><span class='line'>   <span class="nd">@Retention</span><span class="o">(</span><span class="n">RUNTIME</span><span class="o">)</span>
+</span><span class='line'>   <span class="kd">public</span> <span class="nd">@interface</span> <span class="n">MockMode</span> <span class="o">{</span>
+</span><span class='line'>   <span class="n">String</span> <span class="nf">value</span><span class="o">()</span> <span class="k">default</span> <span class="s">&quot;&quot;</span><span class="o">;</span>  <span class="c1">//true/false</span>
+</span><span class='line'>   <span class="o">}</span>   
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Then you can provide different implementation based on the qualifier.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">class</span> <span class="nc">MockLoginRequest</span> <span class="kd">extends</span> <span class="n">LoginRequest</span> <span class="o">{</span>
+</span><span class='line'>        <span class="c1">//skip the network call and fake the result</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Provides</span>
+</span><span class='line'>    <span class="nd">@MockMode</span><span class="o">(</span><span class="s">&quot;mock&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="n">LoginRequest</span> <span class="nf">getMockLoginRequest</span><span class="o">(</span><span class="n">OkHttpClient</span> <span class="n">httpClient</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">MockLoginRequest</span><span class="o">(</span><span class="n">httpClient</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Provides</span>
+</span><span class='line'>    <span class="nd">@MockMode</span><span class="o">(</span><span class="s">&quot;prod&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="n">LoginRequest</span> <span class="nf">getPasscodeRequest</span><span class="o">(</span><span class="n">OkHttpClient</span> <span class="n">httpClient</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">LoginRequest</span><span class="o">(</span><span class="n">httpClient</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If you want to fire the fake <code>LoginRequest</code></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@MockMode</span><span class="o">(</span><span class="s">&quot;mock&quot;</span><span class="o">)</span> 
+</span><span class='line'><span class="kd">private</span> <span class="n">LoginRequest</span> <span class="n">mRequest</span><span class="o">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>or you want to connect to the real server</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@MockMode</span><span class="o">(</span><span class="s">&quot;prod&quot;</span><span class="o">)</span> 
+</span><span class='line'><span class="kd">private</span> <span class="n">LoginRequest</span> <span class="n">mRequest</span><span class="o">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In any case, you should not have debug code in production and Dagger is right there to offer the hand with gradle flavor.  You shall always have the definition <code>MockLoginRequest</code> in the debug flavor and define two modules in <code>release</code> and <code>debug</code> flavor.</p>
+
+<p>Only the production code will go into the <code>release</code> module.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'>    <span class="nd">@Provides</span>
+</span><span class='line'>    <span class="nd">@MockMode</span><span class="o">(</span><span class="s">&quot;prod&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="n">LoginRequest</span> <span class="nf">getInitPasscodeRequest</span><span class="o">(</span><span class="n">OkHttpClient</span> <span class="n">httpClient</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">LoginRequest</span><span class="o">(</span><span class="n">httpClient</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Offer more choice in debug flavor only.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'>
+</span><span class='line'><span class="nd">@Provides</span>
+</span><span class='line'><span class="nd">@MockMode</span><span class="o">(</span><span class="s">&quot;mock&quot;</span><span class="o">)</span>
+</span><span class='line'><span class="n">LoginRequest</span> <span class="nf">getMockLoginRequest</span><span class="o">(</span><span class="n">OkHttpClient</span> <span class="n">httpClient</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nf">MockLoginRequest</span><span class="o">(</span><span class="n">httpClient</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@Provides</span>
+</span><span class='line'><span class="nd">@MockMode</span><span class="o">(</span><span class="s">&quot;prod&quot;</span><span class="o">)</span>
+</span><span class='line'><span class="n">LoginRequest</span> <span class="nf">getInitPasscodeRequest</span><span class="o">(</span><span class="n">OkHttpClient</span> <span class="n">httpClient</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nf">LoginRequest</span><span class="o">(</span><span class="n">httpClient</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If you misuse the qualifier, the compilation will fail and you will immediately know that something goes wrong.</p>
+
+<h3>Dig Deeper</h3>
+
+<p>You need to structure the code around Dagger. Generally we have</p>
+
+<ul>
+<li><code>AppComponent</code>: base component for sub components</li>
+<li><code>AppModule</code>: provides application context</li>
+<li><code>UserModule</code>: provides user information, i.e. <code>LoginSession</code></li>
+<li><code>NetworkModule</code>:  provides implementation of network class, i.e <code>OkHttpClient</code>,<code>Gson</code></li>
+<li><code>UIModule</code>:  provides implementation for naviagtion</li>
+<li>Activity specific modules: provides domain related resources, i.e. <code>LoginRequest</code>, <code>PurcahseRequest</code></li>
+</ul>
+
+
+<figure class='code'><figcaption><span>AppComponent.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@ApplicationScope</span>
+</span><span class='line'><span class="nd">@Component</span><span class="o">(</span>
+</span><span class='line'>        <span class="n">modules</span> <span class="o">=</span> <span class="o">{</span><span class="n">AppModule</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">NetworkModule</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">AppUIModule</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">UserModule</span><span class="o">.</span><span class="na">class</span><span class="o">}</span>
+</span><span class='line'><span class="o">)</span>
+</span><span class='line'><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">AppComponent</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="n">Gson</span> <span class="nf">getGson</span><span class="o">();</span>
+</span><span class='line'>       <span class="c1">//other implementation</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In sub components, utilize the domain-related module for injection</p>
+
+<figure class='code'><figcaption><span>HomeModule.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Module</span>
+</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">HomeModule</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Provides</span>
+</span><span class='line'>    <span class="nd">@MockMode</span><span class="o">(</span><span class="s">&quot;prod&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="n">GetUserInfoRequest</span> <span class="nf">getUserInfoRequest</span><span class="o">(</span><span class="n">OkHttpClient</span> <span class="n">httpClient</span><span class="o">,</span> <span class="n">Gson</span> <span class="n">gson</span><span class="o">,</span> <span class="n">LoginSession</span> <span class="n">session</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">GetUserInfoRequest</span><span class="o">(</span><span class="n">httpClient</span><span class="o">,</span> <span class="n">gson</span><span class="o">,</span> <span class="n">session</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">//offer other modules</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Quote the module in the component</p>
+
+<figure class='code'><figcaption><span>HomeComponent.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@HomeScope</span>
+</span><span class='line'><span class="nd">@Component</span><span class="o">(</span>
+</span><span class='line'>        <span class="n">dependencies</span> <span class="o">=</span> <span class="o">{</span><span class="n">AppComponent</span><span class="o">.</span><span class="na">class</span><span class="o">},</span>
+</span><span class='line'>        <span class="n">modules</span> <span class="o">=</span> <span class="o">{</span><span class="n">HomeModule</span><span class="o">.</span><span class="na">class</span><span class="o">})</span>
+</span><span class='line'><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">HomeComponent</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="nf">inject</span><span class="o">(</span><span class="n">HomeActivity</span> <span class="n">activity</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So when can we get hold of the component and perform the injection?</p>
+
+<p>You definitely want everything ready before the resource is needed. The activity component should be created at the very beginning of the activity life cycle, i.e. <code>onCreate</code> for <code>Activity</code> and the activity performs the injection to views or UI presenters immediately after their new birth. As you may be aware, there are two ways of injection, either injection via constructor or injection via annotation. In general, we favor injection via annotation due to flexibility.</p>
+
+<h3>Even Better in Testing</h3>
+
+<p>Dagger brings much more flexibility to testing as you can easily swap the implementation via injection. For simple structure, as long as you can grab the reference to the object, you can perform injection.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'>        <span class="c1">//input the sms</span>
+</span><span class='line'>        <span class="n">onView</span><span class="o">(</span><span class="n">withId</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">cp_sms_code_input</span><span class="o">)).</span><span class="na">perform</span><span class="o">(</span><span class="n">typeText</span><span class="o">(</span><span class="s">&quot;111111&quot;</span><span class="o">));</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">//inject the fake sms authentication</span>
+</span><span class='line'>        <span class="n">LoginSMSAuthActivity</span> <span class="n">smsAuthActivity</span> <span class="o">=</span> <span class="o">(</span><span class="n">LoginSMSAuthActivity</span><span class="o">)</span> <span class="n">getActivityInstance</span><span class="o">();</span>
+</span><span class='line'>        <span class="n">mockModule</span><span class="o">.</span><span class="na">inject</span><span class="o">((</span><span class="n">LoginSMSAuthActivity</span><span class="o">.</span><span class="na">UIPresenter</span><span class="o">)</span> <span class="n">smsAuthActivity</span><span class="o">.</span><span class="na">presenter</span><span class="o">());</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">//click the button</span>
+</span><span class='line'>        <span class="n">onView</span><span class="o">(</span><span class="n">withId</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">cp_sms_confirm_btn</span><span class="o">)).</span><span class="na">perform</span><span class="o">(</span><span class="n">click</span><span class="o">());</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The combination of Dagger and Espresso is just awesome but it is never short of work around and fixes. We shall talk more about this topic in the next post.</p>
+
+<h2>Cons</h2>
+
+<h3>More Methods</h3>
+
+<p>Dagger will increase the method count without grace. If you find the size of dex is growing out of control due to massive feature requirement, do think twice before triggering the magic of code generation.</p>
+
+<h3>No Second Chance</h3>
+
+<p><code>Volley</code> is interchangeable with <code>OkHttp</code>, you can always switch implementation if one outperforms another. However,  once you design the app around <code>Dagger</code>, you have to stick to it since there is no alternative available to replace the code structure. Vice versa, it is going to take enormous effort to adapt Dagger half way. In other words, you have to make your mind when you start the project.</p>
+
+      <footer class="entry-meta">
+        <span class="entry-tags"><a href="/categories/#android" title="Pages tagged android" class="tag">android</a></span>
+        <span><a href="/blog/2015/05/19/powered-by-dagger-2/" rel="bookmark" title="Powered by Dagger 2">Powered by Dagger 2</a> was published on <span class="entry-date date published updated"><time datetime="2015-05-19T17:15:10+08:00">May 19, 2015</time></span></span>
+        
+        <span class="author vcard"><span class="fn"><a href="/zhao-cong" title="About Zhao Cong">Zhao Cong</a></span></span>
+        
+      </footer>
+    </div><!-- /.entry-content -->
+    
+      <div class="read-more">
+        
+          <div class="read-more-header">
+            <a href="/blog/2015/10/15/memory-leak-caused-by-drawable-in-gingerbread/" class="btn">Read More</a>
+          </div><!-- /.read-more-header -->
+          <div class="read-more-content">
+            <h3><a href="/blog/2015/10/15/memory-leak-caused-by-drawable-in-gingerbread/" title="Memory Leak caused by Drawable in Gingerbread">Memory Leak caused by Drawable in Gingerbread</a></h3>
+            <p>In the previous [post](/blog/2014/09/10/android-memory-leaks/), we have briefly introduced memory leak in Android. Memory leak is one of &hellip;&hellip; <a href="/blog/2015/10/15/memory-leak-caused-by-drawable-in-gingerbread/"> Continue reading</a></p>
+          </div><!-- /.read-more-content -->
+        
+        <div class="read-more-list">
+          
+            <div class="list-item">
+              <h4><a href="/blog/2015/10/13/hello-marshmallow-runtime-runtime-permission/" title="Hello Marshmallow - Runtime Permission">Hello Marshmallow - Runtime Permission</a></h4>
+              <span>Published on October 13, 2015</span>
+            </div><!-- /.list-item -->
+          
+            <div class="list-item">
+              <h4><a href="/blog/2015/05/24/a-shot-of-espresso/" title="A Shot of Espresso">A Shot of Espresso</a></h4>
+              <span>Published on May 24, 2015</span>
+            </div><!-- /.list-item -->
+          
+        </div><!-- /.read-more-list -->
+      </div><!-- /.read-more -->
+    
+    <section id="disqus_thread"></section><!-- /#disqus_thread -->
+  </article>
+</div><!-- /#main -->
+
+<div class="footer-wrapper">
+  <footer role="contentinfo">
+    <span>&copy; 2015 Garena Labs. Powered by <a href="http://octopress.org">Octopress</a> using the <a href="https://github.com/Z1MM32M4N/hpstr-theme/">HPSTR Theme for Octopress</a>.</span>
+
+  </footer>
+</div><!-- /.footer-wrapper -->
+
+
+	        
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script>window.jQuery || document.write('<script src="/javascripts/vendor/jquery-1.9.1.min.js"><\/script>')</script>
+<!--
+<script src="/javascripts/octopress.js" type="text/javascript"></script>
+-->
+<script src="/javascripts/scripts.min.js"></script>
+
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-53779472-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'garenalabs';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://garena.github.io/blog/2015/05/19/powered-by-dagger-2/';
+        var disqus_url = 'http://garena.github.io/blog/2015/05/19/powered-by-dagger-2/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+	        
+
+</body>
+</html>
